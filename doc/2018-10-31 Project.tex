@@ -1,0 +1,186 @@
+% !TEX TS-program = xelatex
+%
+% Created by Joao Lourenco on 2018-09-12.
+% Copyright (c) 2018 .
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{wrapfig}
+\usepackage{graphicx}
+\usepackage{polyglossia}
+\usepackage{hyperref}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage[margin=1in]{geometry}
+
+\newcommand{\mytitle}{\textbf{Project — Parallel Patterns} (v1.0)}
+\newcommand{\myauthor}{João Lourenço}
+\newcommand{\mycourse}{Concurrency and Parallelism 2018-19}
+
+\hypersetup
+{
+  pdftitle   = {\mytitle},
+  pdfsubject = {\mycourse},
+  pdfauthor  = {\myauthor}
+}
+
+\title{\vspace*{-5ex}\includegraphics[width=0.66\linewidth]{logoDIFCTUNL_horiz-transparente}\\{\LARGE\mycourse}\\{\Large\mytitle}}
+\author{\myauthor}
+\date{October 31, 2018}
+
+\setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
+
+
+\begin{document}
+
+
+\maketitle
+
+
+\begin{abstract}
+    This document describes the project assignment for the course of Concurrency and Parallelism.
+\end{abstract}
+
+\section{Introduction}
+
+Up to last week we have been learning and discussing about Patterns for Parallel Programming.  In this project you are asked to collaborate with another colleague and implement a set of Patterns for Parallel Programming using Cilk+.  You are supposed to implement at least the following patterns:     \verb!Map!, \verb!Reduce!, \verb!Scan!, \verb!Pack!, \verb!Gather!, \verb!Scatter!, \verb!Pipeline!, \verb!Farm!, and optimize your code to be as fast and as scalable as possible.  
+
+\subsection{Working rules}
+
+The following working rules apply.  This list is not exhaustive, so in case of doubt, do not hesitate in asking.
+\begin{itemize}
+  \item The project work will be done in grops of 3 people (unless expplicitly authorized otherwise).
+  \item Each group will fork the given main repository and work on their own private repository (remember to keep your repository private \emph{and not public}).
+  \item Each student will commit his/her own work into the shared repository.  I expect at least one commit on each day that you work on the project.
+  \item Commit messages must describe clearly what was changed/added in that commit (and why).
+  \item Remember to push your commits to your group repository. 
+  \item The project report must have the look and feel of a research paper, using the IEEE template for Computer Society Journals (\url{https://goo.gl/Xtjdh4}), with a maximum of 5 pages (references may be on the 6th page).
+\end{itemize}
+
+\subsection{Project grading aspects}
+
+The Project's grade [$\cal{P}$] will take into consideration the following aspects.  The order is not relevant and the list is not exhaustive. In case of doubt, do not hesitate in asking.
+
+\begin{itemize}
+  \item The project will be graded according to the following criteria:
+  \begin{itemize}
+    \item Projects that fail to compile and execute with the following procedure will receive the final grade of 0 points:
+\begin{verbatim}
+    clone <your_repository>
+    cd  <your_repository>
+    make
+    ./main NUMBER
+\end{verbatim}
+    \item The quality of the work as perceived from project report;
+    \item The quality of the text in the project report (well organized, complete, the text/message is clear, no misspellings, etc)
+    \item The project's code look and feel;
+    \item A perfect project which implements all (and only) the above listed patterns will have a top grande of 17 (over 20) points.
+  \end{itemize}
+  \item Some points are reserved for complementary work/achievements, such as:
+  \begin{itemize}
+    \item Some points will be given to the implementation of more patterns (unlisted above).  Please discuss with me the \emph{signature} of the patterns you want to implement.
+    \item Some points will be given to the implementation of more unit/integration ing functions, if shared publicly with the colleagues and used and acknowledged by them in their reports.
+    \item Some points will be given to the project that exhibits the best (timed) speedup (compiling and running the s in the \emph{server node9}).
+    \item Some points will be given to the project that exhibits the best scaled (data size) speedup for 16 processors (compiling and running the s in the \emph{server node9}).
+  \end{itemize}
+    
+\end{itemize}
+
+\subsection{Student grading aspects}
+
+The Students's grade [$\cal{S}$] will take into consideration the following aspects.  The order is not relevant and the list is not exhaustive. In case of doubt, do not hesitate in asking.
+
+\begin{itemize}
+  \item Relevance of the student's commit messages.
+  \item Relevance of the code committed by the student.
+  \item Students that do not exhibit evidences of working on the project (e.g., with no commits, or with nearly empty/non-meaningful commits, or with insufficient/unclear commit messages) will fail the course.
+\end{itemize}
+
+
+\subsection{Student/Project Final grading rule}
+
+\begin{itemize}
+  \item Formula: ${\cal G} = 0.7 * {\cal P} + 0.3 * {\cal S}$
+\end{itemize}
+
+
+\section{Project Description}
+
+In this lab work you are given a working sequential version of a Ray Tracer written using the C++ programming language.
+You are asked to study the given code a create an optimized (parallel) version of the code using Cilk+.
+
+\subsection{Given Version}
+
+You are given a (almost working) version of the project at
+
+\url{https://bitbucket.org/cp201819/parallel_patterns.git}
+
+
+This repository contains two directories/folders: \verb!src! and \verb!doc!.  The former contains the base source code, and the latter will contain your Project Report as a PDF file.  Please name your report as \verb!report_AAAAA_BBBBB_CCCCC.pdf!, where \verb!AAAAA!,  \verb!BBBBB! and  \verb!CCCCC! are the numbers of the group members sorted in increasing order (lowest to highest).
+
+Fork the above repository and name your groups repository as
+
+\verb!cp2018-19_project_AAAAA_BBBBB_CCCCC.pdf!
+
+where \verb!AAAAA!,  \verb!BBBBB! and  \verb!CCCCC! are the numbers of the group members sorted in increasing order (lowest to highest).
+
+In your Linux device (own laptop, lab workstation, or as a last resort, in the “node9” server used in the last lab class) clone your new repository and then try compile your code using the command \verb!make! in the \verb!src! directory.  It must compile with no errors nor warnings.
+
+
+\subsection{Code Structure}
+
+debug.c debug.h main.c patterns.c patterns.h unit.c unit.h
+
+The project include the following source files:
+
+\begin{tabularx}{\linewidth}{lX}
+  \toprule
+  \textbf{Files} & \textbf{Description}\\
+  \midrule
+  \texttt{debug.c debug.h}
+   & Functions for printing the contents of the array(s), useful for debugging (activated with the option “-d”).\\
+  \texttt{patterns.c patterns.h}
+  & The patterns to be implemented.  The “.c” file contains empty functions.\\
+  \texttt{unit.c unit.h} 
+  & Functions for unit testing of each pattern.\\
+  \texttt{main.c} 
+  & The main program.\\
+  \bottomrule
+\end{tabularx}
+
+
+\subsection{Work plan}
+
+Your job is to make an optimized parallel version (using Cilk+) of all the patterns listed in the files \verb!patterns.c!/\verb!patterns.h!!.
+
+You may follow these steps:
+
+\begin{enumerate}
+  \item Clone/fork the given project.
+  \item Compile the given version.  Study the source code and understand how it works.
+  \item Discuss with your colleagues how to split the work.
+  \item Implement a sequential version of each pattern.
+  \item Compile and run the tests and confirm the results.
+  \item Implement a parallel version of each pattern.
+  \item Compile and run the tests and confirm the results.
+  \item For each pattern, measure its perfocrmance/scalability/scaled scalability. You may experiment with different numbers of processors (by setting the environment variable \verb!CILK_NWORKERS!). 
+  \item Optimize the given code.
+  \item Go back to item 7.\ until satisfied.
+  \item Write the report.  Revise the report.  Please put your report in the \verb!doc! directory and name it as \verb!report_AAAAA_BBBBB_CCCCC.pdf!, where \verb!AAAAA!,  \verb!BBBBB! and  \verb!CCCCC! are the numbers of the group members sorted in increasing order (lowest to highest).
+  \item \emph{Optional:} implement and optimize some more parallel patterns.
+  \item \emph{Optional:} implement and share some more tests (unit or integration tests).
+  \item \emph{Optional:} complete the report and revise again.
+\end{enumerate}
+
+\textbf{Please remember to commit regularly your changes, and please always write meaningful commit messages.}
+
+
+
+\section{Questions/Discussion}
+
+Please ask your questions using the Piazza system.  Either public (if possible) or private (if really necessary).
+
+
+\end{document}
+
