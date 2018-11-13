@@ -95,7 +95,49 @@ void scatter (void *dest, void *src, size_t nJob, size_t sizeJob, const int *fil
 }
 
 void pipeline (void *dest, void *src, size_t nJob, size_t sizeJob, void (*workerList[])(void *v1, const void *v2), size_t nWorkers) {
-    /* To be implemented */
+    memcpy(dest, src, nJob*sizeJob);
+
+    /*printf("[%f", *((double*)src));
+    for(int i = 1; i < nJob; i++)
+    	printf(", %f", *((double*)(src + i*sizeJob)));
+    printf("]\n");*/
+
+    size_t batch_size = nJob % nWorkers == 0 ? nJob / nWorkers : (nJob / nWorkers)+1; // Verificar se é divisivel. +1 não é a melhor opção
+    //size_t batch_size = nJob / nWorkers;
+
+    for(int i=0; i < nWorkers + (nWorkers-1); i++) { // como descobrir o max i?
+    	int j = min(i, nWorkers-1); // Isto está bem? min(i, nWorkers-1) ?
+    	int limit = i - min(i, nWorkers-1);
+    	printf("%d <= j <= %d\n", limit, j);
+    	for(; j >= limit; j--) {
+    		printf("j=%d\n", j);
+    		int index = min(i, nWorkers-1 ) - j;
+    		int start = index*batch_size + limit*batch_size;
+    		int limit2 = min(batch_size, nJob-start);
+    		printf("%d <= k < %d\n", start, start + limit2);
+    		/*cilk_for(int k = 0; k < limit2; k++) {
+    			workerList[j](dest + start*sizeJob + k * sizeJob, dest + start*sizeJob + k * sizeJob);
+    		}*/
+    		map(dest + start*sizeJob, dest + start*sizeJob, limit2-start, sizeJob, workerList[j]);
+    	}
+        /*printf("[%f", *((double*)dest));
+        for(int i = 1; i < nJob; i++)
+        	printf(", %f", *((double*)(dest + i*sizeJob)));
+        printf("]\n");*/
+
+    	}/*
+    for (int i=0; i < nJob; i++) {
+                    memcpy (dest + i * sizeJob, src + i * sizeJob, sizeJob);
+                    for (int j = 0;  j < nWorkers;  j++)
+                        workerList[j](dest + i * sizeJob, dest + i * sizeJob);
+                }
+    printf("[%f", *((double*)dest));
+            for(int i = 1; i < nJob; i++)
+            	printf(", %f", *((double*)(dest + i*sizeJob)));
+            printf("]\n");*/
+}
+
+void pipeline_seq (void *dest, void *src, size_t nJob, size_t sizeJob, void (*workerList[])(void *v1, const void *v2), size_t nWorkers) {
     for (int i=0; i < nJob; i++) {
         memcpy (dest + i * sizeJob, src + i * sizeJob, sizeJob);
         for (int j = 0;  j < nWorkers;  j++)
