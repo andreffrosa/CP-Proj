@@ -1,6 +1,11 @@
 #include <string.h>
 #include <assert.h>
 #include "patterns.h"
+#include "cilk/cilk.h"
+
+#include <stdio.h>
+
+#define min(x, y) ((x < y) ? x : y)
 
 void map (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2)) {
     /* To be implemented */
@@ -63,7 +68,7 @@ void scatter (void *dest, void *src, size_t nJob, size_t sizeJob, const int *fil
 }
 
 void pipeline (void *dest, void *src, size_t nJob, size_t sizeJob, void (*workerList[])(void *v1, const void *v2), size_t nWorkers) {
-    /* To be implemented */
+    *//* To be implemented *//*
     for (int i=0; i < nJob; i++) {
         memcpy (dest + i * sizeJob, src + i * sizeJob, sizeJob);
         for (int j = 0;  j < nWorkers;  j++)

@@ -1,6 +1,6 @@
 CC=gcc
-CFLAGS=-g -std=gnu11 -Wall -Werror #-fcilkplus
-LDFLAGS=#-lcilkrts
+CFLAGS=-g -std=gnu11 -Wall -Werror -fcilkplus
+LDFLAGS=-lcilkrts
 
 S=debug.c main.c patterns.c unit.c
 O=$(patsubst %.c,%.o,$(S))
