@@ -96,24 +96,27 @@ void scatter (void *dest, void *src, size_t nJob, size_t sizeJob, const int *fil
 }
 
 void pipeline (void *dest, void *src, size_t nJob, size_t sizeJob, void (*workerList[])(void *v1, const void *v2), size_t nWorkers) {
-	memcpy(dest, src, nJob*sizeJob);
 
 	unsigned int avg_batch_size = nJob / nWorkers;
 	unsigned int iterations = nWorkers + (nWorkers-1);
 
 	int last_worker, max_worker, batch_start, current_batch_size; // Choose better names
 
+	memcpy(dest, src, nJob*sizeJob);
+
 	for(int i = 0; i < iterations; i++) {
 		max_worker = min(i, nWorkers-1);
 		last_worker = i - max_worker;
-		//printf("%d <= j <= %d\n", last_worker, max_worker);
+
+		// Compute each worker on the respective batch
 		for(int j = max_worker; j >= last_worker; j--) {
-			//printf("j=%d\n", j);
 			batch_start = (i-j)*avg_batch_size;
 
 			current_batch_size = (nJob - (batch_start + 2*avg_batch_size) < 0) ? nJob - batch_start : avg_batch_size;
-			/*cilk_for(int k = 0; k < limit2; k++) {
-    			workerList[j](dest + start*sizeJob + k * sizeJob, dest + start*sizeJob + k * sizeJob);
+
+			// Compute the worker on the current batch
+			/*cilk_for(int k = 0; k < current_batch_size; k++) {
+    			workerList[j](dest + batch_start*sizeJob + k * sizeJob, dest + batch_start*sizeJob + k * sizeJob);
     		}*/
 			map(dest + batch_start*sizeJob, dest + batch_start*sizeJob, current_batch_size, sizeJob, workerList[j]);
 		}
