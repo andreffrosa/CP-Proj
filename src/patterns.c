@@ -20,10 +20,13 @@ void map (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(voi
     cilk_for (int i=0; i < nJob; i++) {
         worker(dest + i * sizeJob, src + i * sizeJob);
     }
+    #pragma GCC diagnostic pop
 
-    // Note: compare with: #pragma simd for() ...
-
-	#pragma GCC diagnostic pop
+    // Alternative implementation when hardware vectorization is possible
+	/*#pragma simd
+    for (int i=0; i < nJob; i++) {
+    	worker(dest + i * sizeJob, src + i * sizeJob);
+    }*/
 }
 
 void map_seq (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2)) {
