@@ -102,8 +102,8 @@ void pipeline (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker
     	printf(", %f", *((double*)(src + i*sizeJob)));
     printf("]\n");*/
 
-    size_t batch_size = nJob % nWorkers == 0 ? nJob / nWorkers : (nJob / nWorkers)+1; // Verificar se é divisivel. +1 não é a melhor opção
-    //size_t batch_size = nJob / nWorkers;
+    //size_t batch_size = nJob % nWorkers == 0 ? nJob / nWorkers : (nJob / nWorkers)+1; // Verificar se é divisivel. +1 não é a melhor opção
+    size_t batch_size = nJob / nWorkers;
 
     for(int i=0; i < nWorkers + (nWorkers-1); i++) { // como descobrir o max i?
     	int j = min(i, nWorkers-1); // Isto está bem? min(i, nWorkers-1) ?
@@ -113,7 +113,8 @@ void pipeline (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker
     		printf("j=%d\n", j);
     		int index = min(i, nWorkers-1 ) - j;
     		int start = index*batch_size + limit*batch_size;
-    		int limit2 = min(batch_size, nJob-start);
+    		//int limit2 = min(batch_size, nJob-start);
+    		int limit2 = ( (nJob) - (start+batch_size)  < batch_size ) ? nJob-start : batch_size;
     		printf("%d <= k < %d\n", start, start + limit2);
     		/*cilk_for(int k = 0; k < limit2; k++) {
     			workerList[j](dest + start*sizeJob + k * sizeJob, dest + start*sizeJob + k * sizeJob);
