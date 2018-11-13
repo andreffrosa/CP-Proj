@@ -22,8 +22,9 @@ void map (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(voi
 	#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 
     // Define the grainsize
-	#pragma cilk grainsize = max(1024, min(nJob/(__cilkrts_get_nworkers()), 2048))
-    cilk_for (int i=0; i < nJob; i++) {
+	//#pragma cilk grainsize = max(1024, min(nJob/(__cilkrts_get_nworkers()), 2048))
+	#pragma cilk grainsize = __cilkrts_get_nworkers()
+    cilk_for (int i = 0; i < nJob; i++) {
         worker(dest + i * sizeJob, src + i * sizeJob);
     }
     #pragma GCC diagnostic pop
@@ -103,23 +104,25 @@ void pipeline (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker
     printf("]\n");*/
 
     //size_t batch_size = nJob % nWorkers == 0 ? nJob / nWorkers : (nJob / nWorkers)+1; // Verificar se é divisivel. +1 não é a melhor opção
-    size_t batch_size = nJob / nWorkers;
+    unsigned int batch_size = nJob / nWorkers;
+
+    printf("array limits: %p to %p\n", dest, dest+nJob*sizeJob);
 
     for(int i=0; i < nWorkers + (nWorkers-1); i++) { // como descobrir o max i?
-    	int j = min(i, nWorkers-1); // Isto está bem? min(i, nWorkers-1) ?
+    	int  j = min(i, nWorkers-1); // Isto está bem? min(i, nWorkers-1) ?
     	int limit = i - min(i, nWorkers-1);
     	printf("%d <= j <= %d\n", limit, j);
     	for(; j >= limit; j--) {
     		printf("j=%d\n", j);
-    		int index = min(i, nWorkers-1 ) - j;
-    		int start = index*batch_size + limit*batch_size;
+    		unsigned int index = min(i, nWorkers-1 ) - j;
+    		unsigned int start = index*batch_size + limit*batch_size;
     		//int limit2 = min(batch_size, nJob-start);
-    		int limit2 = ( (nJob) - (start+batch_size)  < batch_size ) ? nJob-start : batch_size;
+    		unsigned int limit2 = ( (nJob) - (start+batch_size)  < batch_size ) ? nJob-start : batch_size;
     		printf("%d <= k < %d\n", start, start + limit2);
     		/*cilk_for(int k = 0; k < limit2; k++) {
     			workerList[j](dest + start*sizeJob + k * sizeJob, dest + start*sizeJob + k * sizeJob);
     		}*/
-    		map(dest + start*sizeJob, dest + start*sizeJob, limit2-start, sizeJob, workerList[j]);
+    		map(dest + start*sizeJob, dest + start*sizeJob, limit2, sizeJob, workerList[j]);
     	}
         /*printf("[%f", *((double*)dest));
         for(int i = 1; i < nJob; i++)
