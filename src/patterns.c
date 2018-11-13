@@ -6,17 +6,23 @@
 
 #include <stdio.h>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #define min(x, y) ((x < y) ? x : y)
+#define max(x, y) ((x > y) ? x : y)
+#pragma GCC diagnostic pop
 
 void map (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2)) {
     assert (dest != NULL);
     assert (src != NULL);
     assert (worker != NULL);
 
+    // Ignore the warning
 	#pragma GCC diagnostic push
 	#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 
-	#pragma cilk grainsize = nJob/(4*__cilkrts_get_nworkers())
+    // Define the grainsize
+	#pragma cilk grainsize = max(1024, min(nJob/(__cilkrts_get_nworkers()), 2048))
     cilk_for (int i=0; i < nJob; i++) {
         worker(dest + i * sizeJob, src + i * sizeJob);
     }
