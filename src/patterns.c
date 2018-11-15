@@ -106,9 +106,6 @@ void pipeline (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker
 	#pragma GCC diagnostic ignored "-Wunused-variable"
 
 	unsigned int iterations = nJob + nWorkers-1;
-	//unsigned int iterations = nWorkers + (nWorkers-1);
-
-	int last_worker, max_worker;//, batch_start; // Choose better names
 
 	memcpy(dest, src, nJob*sizeJob);
 
@@ -119,64 +116,29 @@ void pipeline (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker
 		printf("]\n");
 	
 	printf("%d <= i < %d\n", 0, iterations);
-	/*for(int i = 0; i < iterations; i++) {
-		printf("i=%d\n", i);
-		//max_worker = min(i, nWorkers-1);
-		max_worker = min(i, nJob-1);
-		//last_worker = i - max_worker;
-		//last_worker = max(0, max_worker - nWorkers + 1);
-		last_worker = max_worker - nWorkers + 1;
-		if (last_worker < 0) last_worker = 0;
-
-		printf("%d <= j <= %d\n", last_worker, max_worker);
-		// Compute each worker on the respective batch
-		for(int j = max_worker; j >= last_worker; j--) {
-			printf("j=%d\n", j);
-			batch_start = (i-j); // Tá mal
-
-			// Compute the worker on the current batch
-			//cilk_for(int k = 0; k < current_batch_size; k++) {
-    			//workerList[j](dest + batch_start*sizeJob + k * sizeJob, dest + batch_start*sizeJob + k * sizeJob);
-    		//}	
-			printf("%d <= batch <= %d\n", batch_start, batch_start);
-			cilk_spawn workerList[j](dest + batch_start*sizeJob, dest + batch_start*sizeJob);
-			//printf("%d\n", current_batch_size);
-		}
-		cilk_sync;
-		printf("[%f", *(double*)(dest));
-		for(int s=1; s < nJob; s++) {
-			printf(", %f", *((double*)(dest)+s));
-		}
-		printf("]\n");
-	}*/
 	for(int i = 0; i < iterations; i++) {
 		printf("i=%d\n", i);
-		//max_worker = min(i, nWorkers-1);
-		max_worker = min(i, nJob-1);
-		//last_worker = i - max_worker;
-		//last_worker = max(0, max_worker - nWorkers + 1);
-		last_worker = max_worker - nWorkers + 1;
-		if (last_worker < 0) last_worker = 0;
 		
-		int currentJob = ( i < nJob) ? i : nJob-1;
-		int firstWork = i - currentJob;
-		int nWorks = ( (currentJob - (int)nWorkers + 1) > 0) ? nWorkers - firstWork : currentJob + 1;
+		int headJob = ( i < nJob) ? i : nJob-1;
+		int firstWork = i - headJob;
+		int nWorks = ( (headJob - (int)nWorkers + 1) > 0) ? nWorkers - firstWork : headJob + 1;
+		int lastWork = firstWork+nWorks;
 
-		printf("currentJob: %d nWorks: %d firstWork: %d\n", currentJob, nWorks, firstWork);
+		printf("headJob: %d nWorks: %d firstWork: %d\n", headJob, nWorks, firstWork);
 
-		printf("%d <= j <= %d\n", currentJob - nWorks + 1, currentJob);
+		printf("%d <= j <= %d\n", headJob - nWorks + 1, headJob);
 		// Compute each worker on the respective batch
-		for(int j = 0; j < nWorks; j++) {
+		for(int j = firstWork; j < lastWork; j++) {
 			printf("worker=%d\n", j + firstWork);
-			//batch_start = (i-j); // Tá mal
 
+			printf("%d <= batch <= %d\n", headJob-j, headJob-j);
+
+			//int worker = j + firstWork;
+			//int currentJob = headJob-j;
+			int currentJob = headJob-(j - firstWork);
 			// Compute the worker on the current batch
-			//cilk_for(int k = 0; k < current_batch_size; k++) {
-    			//workerList[j](dest + batch_start*sizeJob + k * sizeJob, dest + batch_start*sizeJob + k * sizeJob);
-    		//}	
-			printf("%d <= batch <= %d\n", currentJob-j, currentJob-j);
-			cilk_spawn workerList[j + firstWork](dest + (currentJob-j)*sizeJob, dest + (currentJob-j)*sizeJob);
-			//printf("%d\n", current_batch_size);
+			void* job = dest + currentJob*sizeJob;
+			cilk_spawn workerList[j](job, job);
 		}
 		cilk_sync;
 		printf("[%f", *(double*)(dest));
