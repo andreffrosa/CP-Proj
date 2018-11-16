@@ -128,7 +128,8 @@ void pipeline (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker
 
 		printf("%d <= j <= %d\n", headJob - nWorks + 1, headJob);
 		// Compute each worker on the respective batch
-		for(int j = firstWork; j < lastWork; j++) {
+		//for(int j = firstWork; j < lastWork; j++) {
+		cilk_for(int j = firstWork; j < lastWork; j++) {
 			printf("worker=%d\n", j + firstWork);
 
 			printf("%d <= batch <= %d\n", headJob-j, headJob-j);
@@ -138,9 +139,9 @@ void pipeline (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker
 			int currentJob = headJob-(j - firstWork);
 			// Compute the worker on the current batch
 			void* job = dest + currentJob*sizeJob;
-			cilk_spawn workerList[j](job, job);
+			/*cilk_spawn */workerList[j](job, job);
 		}
-		cilk_sync;
+		//cilk_sync;
 		printf("[%f", *(double*)(dest));
 		for(int s=1; s < nJob; s++) {
 			printf(", %f", *((double*)(dest)+s));
