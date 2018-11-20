@@ -6,34 +6,15 @@
 
 #include <stdio.h>
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-#define max(x, y) (((x) > (y)) ? (x) : (y))
-#define min(x, y) (((x) < (y)) ? (x) : (y))
-#pragma GCC diagnostic pop
-
 void map (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2)) {
     assert (dest != NULL);
     assert (src != NULL);
     assert (worker != NULL);
 
-    // Ignore the warning
-	#pragma GCC diagnostic push
-	#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-
     // Define the grainsize
-	#pragma cilk grainsize = max(1024, min(nJob/(__cilkrts_get_nworkers()), 2048))
-	//#pragma cilk grainsize = __cilkrts_get_nworkers()
-    cilk_for (int i = 0; i < nJob; i++) {
+	//#pragma cilk grainsize = max(1024, min(nJob/(__cilkrts_get_nworkers()), 2048))
+    cilk_for (int i = 0; i < nJob; i++)
         worker(dest + i * sizeJob, src + i * sizeJob);
-    }
-    #pragma GCC diagnostic pop
-
-    // Alternative implementation when hardware vectorization is possible
-	/*#pragma simd
-    for (int i=0; i < nJob; i++) {
-    	worker(dest + i * sizeJob, src + i * sizeJob);
-    }*/
 }
 
 void map_seq (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2)) {
@@ -95,74 +76,29 @@ void scatter (void *dest, void *src, size_t nJob, size_t sizeJob, const int *fil
     }
 }
 
-
 void pipeline (void *dest, void *src, size_t nJob, size_t sizeJob, void (*workerList[])(void *v1, const void *v2), size_t nWorkers) {
-
-	//unsigned int avg_batch_size = nJob / nWorkers;
-	// Ignore the warning
-	#pragma GCC diagnostic push
-	#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
-	#pragma GCC diagnostic push
-	#pragma GCC diagnostic ignored "-Wunused-variable"
-
-	unsigned int iterations = nJob + nWorkers-1;
 
 	memcpy(dest, src, nJob*sizeJob);
 
-	printf("[%f", *(double*)(src));
-		for(int s=1; s < nJob; s++) {
-			printf(", %f", *((double*)(src)+s));
-		}
-		printf("]\n");
+	unsigned int iterations = nJob + nWorkers-1;
 	
-	printf("%d <= i < %d\n", 0, iterations);
 	for(int i = 0; i < iterations; i++) {
-		printf("i=%d\n", i);
-		
-		int headJob = ( i < nJob) ? i : nJob-1;
-		int firstWork = i - headJob;
-		int nWorks = ( (headJob - (int)nWorkers + 1) > 0) ? nWorkers - firstWork : headJob + 1;
-		int lastWork = firstWork+nWorks;
+		// Compute the allowed workers
+		int last_job = i - nJob + 1;
+		int min_worker = last_job <= 0 ? 0 : last_job;
+		int max_worker = i > nWorkers-1 ? nWorkers-1 : i;
 
-		printf("headJob: %d nWorks: %d firstWork: %d\n", headJob, nWorks, firstWork);
-
-		printf("%d <= j <= %d\n", headJob - nWorks + 1, headJob);
-		// Compute each worker on the respective batch
-		//for(int j = firstWork; j < lastWork; j++) {
-		cilk_for(int j = firstWork; j < lastWork; j++) {
-			printf("worker=%d\n", j + firstWork);
-
-			printf("%d <= batch <= %d\n", headJob-j, headJob-j);
-
-			//int worker = j + firstWork;
-			//int currentJob = headJob-j;
-			int currentJob = headJob-(j - firstWork);
-			// Compute the worker on the current batch
-			void* job = dest + currentJob*sizeJob;
-			/*cilk_spawn */workerList[j](job, job);
+		// Compute each worker
+		for( int j = min_worker; j <= max_worker; j++) {
+			void* job = dest + (i-j)*sizeJob;
+			cilk_spawn workerList[j](job, job);
 		}
-		//cilk_sync;
-		printf("[%f", *(double*)(dest));
-		for(int s=1; s < nJob; s++) {
-			printf(", %f", *((double*)(dest)+s));
-		}
-		printf("]\n");
+		cilk_sync;
 	}
-	
-	printf("seq\n");
-	pipeline_seq(dest, src, nJob, sizeJob, workerList, nWorkers);
-	printf("[%f", *(double*)(dest));
-		for(int s=1; s < nJob; s++) {
-			printf(", %f", *((double*)(dest)+s));
-		}
-		printf("]\n");
-
-    	#pragma GCC diagnostic pop
-	#pragma GCC diagnostic pop
 }
 
 
-void multiple_pipeline (void *dest, void *src, size_t nJob, size_t sizeJob, void (*workerList[])(void *v1, const void *v2), size_t nWorkers) {
+/*void multiple_pipeline (void *dest, void *src, size_t nJob, size_t sizeJob, void (*workerList[])(void *v1, const void *v2), size_t nWorkers) {
 
 	//unsigned int avg_batch_size = nJob / nWorkers;
 	// Ignore the warning
@@ -196,9 +132,9 @@ void multiple_pipeline (void *dest, void *src, size_t nJob, size_t sizeJob, void
 			current_batch_size = (nJob - (batch_start + 2*avg_batch_size) < 0) ? nJob - batch_start : avg_batch_size;
 
 			// Compute the worker on the current batch
-			/*cilk_for(int k = 0; k < current_batch_size; k++) {
+			*//*cilk_for(int k = 0; k < current_batch_size; k++) {
     			workerList[j](dest + batch_start*sizeJob + k * sizeJob, dest + batch_start*sizeJob + k * sizeJob);
-    		}*/	
+    		}*//*
 			printf("%d <= batch <= %d\n", batch_start, batch_start+current_batch_size-1);
 			cilk_spawn map(dest + batch_start*sizeJob, dest + batch_start*sizeJob, current_batch_size, sizeJob, workerList[j]);
 			
@@ -222,7 +158,7 @@ void multiple_pipeline (void *dest, void *src, size_t nJob, size_t sizeJob, void
 		printf("]\n");
 
     	#pragma GCC diagnostic pop
-}
+}*/
 
 void pipeline_seq (void *dest, void *src, size_t nJob, size_t sizeJob, void (*workerList[])(void *v1, const void *v2), size_t nWorkers) {
     for (int i=0; i < nJob; i++) {
