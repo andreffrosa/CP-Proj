@@ -179,70 +179,11 @@ void multiple_pipeline (void *dest, void *src, size_t nJob, size_t sizeJob, void
 	}
 }
 
-
-/*void multiple_pipeline (void *dest, void *src, size_t nJob, size_t sizeJob, void (*workerList[])(void *v1, const void *v2), size_t nWorkers) {
-
-	//unsigned int avg_batch_size = nJob / nWorkers;
-	// Ignore the warning
-	#pragma GCC diagnostic push
-	#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
-
-	unsigned int avg_batch_size = __cilkrts_get_nworkers();
-	unsigned int iterations = nJob + nWorkers-1;
-	//unsigned int iterations = nWorkers + (nWorkers-1);
-
-	int last_worker, max_worker, batch_start, current_batch_size; // Choose better names
-
-	memcpy(dest, src, nJob*sizeJob);
-
-	printf("[%f", *(double*)(src));
-		for(int s=1; s < nJob; s++) {
-			printf(", %f", *((double*)(src)+s));
-		}
-		printf("]\n");
-
-	printf("%d <= i < %d\n", 0, iterations);
-	for(int i = 0; i < iterations; i++) {
-		max_worker = min(i, nWorkers-1);
-		last_worker = i - max_worker;
-
-		printf("%d <= j <= %d\n", max_worker, last_worker);
-		// Compute each worker on the respective batch
-		for(int j = max_worker; j >= last_worker; j--) {
-			batch_start = (i-j)*avg_batch_size;
-
-			current_batch_size = (nJob - (batch_start + 2*avg_batch_size) < 0) ? nJob - batch_start : avg_batch_size;
-
-			// Compute the worker on the current batch
- *//*cilk_for(int k = 0; k < current_batch_size; k++) {
-    			workerList[j](dest + batch_start*sizeJob + k * sizeJob, dest + batch_start*sizeJob + k * sizeJob);
-    		}*//*
-			printf("%d <= batch <= %d\n", batch_start, batch_start+current_batch_size-1);
-			cilk_spawn map(dest + batch_start*sizeJob, dest + batch_start*sizeJob, current_batch_size, sizeJob, workerList[j]);
-
-			//cilk_spawn workerList[j](dest + batch_start*sizeJob, dest + batch_start*sizeJob);
-			//printf("%d\n", current_batch_size);
-		}
-		cilk_sync;
-		printf("[%f", *(double*)(dest));
-		for(int s=1; s < nJob; s++) {
-			printf(", %f", *((double*)(dest)+s));
-		}
-		printf("]\n");
-	}
-
-	printf("seq\n");
-	pipeline_seq(dest, src, nJob, sizeJob, workerList, nWorkers);
-	printf("[%f", *(double*)(dest));
-		for(int s=1; s < nJob; s++) {
-			printf(", %f", *((double*)(dest)+s));
-		}
-		printf("]\n");
-
-    	#pragma GCC diagnostic pop
-}*/
-
 void pipeline_seq (void *dest, void *src, size_t nJob, size_t sizeJob, void (*workerList[])(void *v1, const void *v2), size_t nWorkers) {
+	assert (dest != NULL);
+	assert (src != NULL);
+	assert (workerList != NULL);
+
 	for (int i=0; i < nJob; i++) {
 		memcpy (dest + i * sizeJob, src + i * sizeJob, sizeJob);
 		for (int j = 0;  j < nWorkers;  j++)
@@ -251,6 +192,24 @@ void pipeline_seq (void *dest, void *src, size_t nJob, size_t sizeJob, void (*wo
 }
 
 void farm (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2), size_t nWorkers) {
-	/* To be implemented */
+	assert (dest != NULL);
+	assert (src != NULL);
+	assert (worker != NULL);
+
+	cilk_for(int i = 0; i < nWorkers; i++){
+		// Compute the amount of work each worker gets, distributing the remaining across multiple workers
+		size_t batchSize = (nJob / nWorkers) + (( i < nJob % nWorkers) ? 1 : 0);
+
+		// Compute the start of the worker's batch
+		int start = i*(nJob / nWorkers) + (( i < nJob % nWorkers) ? i : nJob % nWorkers);
+
+		// In each worker, execute serially each job on his batch
+		for(int j = 0; j < batchSize; j++ ) {
+			worker(dest + (start+j) * sizeJob, src + (start+j) * sizeJob);
+		}
+	}
+}
+
+void farm_seq (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2), size_t nWorkers) {
 	map (dest, src, nJob, sizeJob, worker);
 }
