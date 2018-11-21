@@ -178,6 +178,10 @@ void multiple_pipeline (void *dest, void *src, size_t nJob, size_t sizeJob, void
 }
 
 void pipeline_seq (void *dest, void *src, size_t nJob, size_t sizeJob, void (*workerList[])(void *v1, const void *v2), size_t nWorkers) {
+	assert (dest != NULL);
+	assert (src != NULL);
+	assert (workerList != NULL);
+
 	for (int i=0; i < nJob; i++) {
 		memcpy (dest + i * sizeJob, src + i * sizeJob, sizeJob);
 		for (int j = 0;  j < nWorkers;  j++)
@@ -186,6 +190,24 @@ void pipeline_seq (void *dest, void *src, size_t nJob, size_t sizeJob, void (*wo
 }
 
 void farm (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2), size_t nWorkers) {
-	/* To be implemented */
+	assert (dest != NULL);
+	assert (src != NULL);
+	assert (worker != NULL);
+
+	cilk_for(int i = 0; i < nWorkers; i++){
+		// Compute the amount of work each worker gets, distributing the remaining across multiple workers
+		size_t batchSize = (nJob / nWorkers) + (( i < nJob % nWorkers) ? 1 : 0);
+
+		// Compute the start of the worker's batch
+		int start = i*(nJob / nWorkers) + (( i < nJob % nWorkers) ? i : nJob % nWorkers);
+
+		// In each worker, execute serially each job on his batch
+		for(int j = 0; j < batchSize; j++ ) {
+			worker(dest + (start+j) * sizeJob, src + (start+j) * sizeJob);
+		}
+	}
+}
+
+void farm_seq (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2), size_t nWorkers) {
 	map (dest, src, nJob, sizeJob, worker);
 }
