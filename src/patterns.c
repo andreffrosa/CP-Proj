@@ -80,21 +80,38 @@ void pipeline (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker
 
 	memcpy(dest, src, nJob*sizeJob);
 
-	unsigned int iterations = nJob + nWorkers-1;
-	
-	for(int i = 0; i < iterations; i++) {
-		// Compute the allowed workers
-		int last_job = i - nJob + 1;
-		int min_worker = last_job <= 0 ? 0 : last_job;
-		int max_worker = i > nWorkers-1 ? nWorkers-1 : i;
-
+	// Start of the pipeline
+	unsigned int limit = nWorkers-1;
+	for(int i = 0; i < limit; i++) {
 		// Compute each worker
-		for( int j = min_worker; j <= max_worker; j++) {
+		for( int j = 0; j <= i; j++) {
 			void* job = dest + (i-j)*sizeJob;
 			cilk_spawn workerList[j](job, job);
 		}
 		cilk_sync;
 	}
+
+	// Normal functioning of the pipeline
+	limit = nJob;
+	for(int i =  nWorkers-1; i < limit; i++) {
+			// Compute each worker
+			for( int j = 0; j < nWorkers; j++) {
+				void* job = dest + (i-j)*sizeJob; // inicializar o i logo a nWorkers-1 ?
+				cilk_spawn workerList[j](job, job);
+			}
+			cilk_sync;
+		}
+
+	// Finish of the ramaining tasks
+	limit = nJob + nWorkers-1;
+	for(int i = nJob; i < limit; i++) {
+			// Compute each worker
+			for( int j = i - nJob + 1; j < nWorkers; j++) {
+				void* job = dest + (i-j)*sizeJob;
+				cilk_spawn workerList[j](job, job);
+			}
+			cilk_sync;
+		}
 }
 
 
