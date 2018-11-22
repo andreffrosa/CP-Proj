@@ -22,6 +22,15 @@ static void workerAddOne(void* a, const void* b) {
     // a = b + 1
     *(TYPE *)a = *(TYPE *)b + 1;
 }
+static void workerMultTwo(void* a, const void* b) {
+    // a = b * 2
+    *(TYPE *)a = *(TYPE *)b * 2;
+}
+
+static void workerDivTwo(void* a, const void* b) {
+    // a = b / 2
+    *(TYPE *)a = *(TYPE *)b / 2;
+}
 
 
 //https://www.gnu.org/software/libc/manual/html_node/CPU-Time.html para colocar na bibliografia
@@ -45,29 +54,74 @@ unsigned long evalMap(void* src, void* dest, size_t nJob, size_t size, MODE mode
 	return us_cpu_time_used;
 }
 
+unsigned long evalPipeline (void* src, void* dest, size_t nJob, size_t size, MODE mode) {
+    void (*pipelineFunction[])(void*, const void*) = {
+        workerMultTwo,
+        workerAddOne,
+        workerDivTwo
+    };
+    int nPipelineFunction = sizeof (pipelineFunction)/sizeof(pipelineFunction[0]);
+
+    clock_t start, end;
+    	unsigned long us_cpu_time_used;
+
+    	if( mode == SEQ) {
+    		start = clock();
+    	    pipeline_seq (dest, src, nJob, size, pipelineFunction, nPipelineFunction);
+    		end = clock();
+    	} else {
+    		start = clock();
+    	    pipeline (dest, src, nJob, size, pipelineFunction, nPipelineFunction);
+    		end = clock();
+    	}
+
+    	us_cpu_time_used = (unsigned long)((((double) (end - start)) / (CLOCKS_PER_SEC/ (1000*1000))) ); // in microseconds
+
+    	return us_cpu_time_used;
+}
+
+unsigned long evalFarm (void* src, void* dest, size_t nJob, size_t size, MODE mode) {
+    clock_t start, end;
+    	unsigned long us_cpu_time_used;
+
+    	if( mode == SEQ) {
+    		start = clock();
+    		farm_seq (dest, src, nJob, size, workerAddOne, 3);
+    		end = clock();
+    	} else {
+    		start = clock();
+    		farm (dest, src, nJob, size, workerAddOne, 3);
+    		end = clock();
+    	}
+
+    	us_cpu_time_used = (unsigned long)((((double) (end - start)) / (CLOCKS_PER_SEC/ (1000*1000))) ); // in microseconds
+
+    	return us_cpu_time_used;
+}
+
 typedef unsigned long (*EVALFUNCTION)(void *, void*, size_t, size_t, MODE);
 
 EVALFUNCTION evalFunction[] = {
-    evalMap
+    evalMap,
     /*testReduce,
     testScan,
     testPack,
     testGather,
-    testScatter,
-    testPipeline,
-    testFarm,*/
+    testScatter,*/
+    evalPipeline,
+    evalFarm
 };
 
 
 char *evalNames[] = {
-    "map",
+    "Map",
     /*"testReduce",
     "testScan",
     "testPack",
     "testGather",
-    "testScatter",
-    "testPipeline",
-    "testFarm",*/
+    "testScatter",*/
+    "Pipeline",
+    "Farm"
 };
 
 int nEvalFunctions = sizeof (evalFunction)/sizeof(evalFunction[0]);
@@ -77,12 +131,12 @@ int main(int argc, char** argv) {
 
 	// processArgs
 
-	size_t runs = 100;
-	size_t step = 100000;
-	size_t start = 100000;
-	size_t max_size = 1000000;
+	size_t runs = 3;
+	size_t step = 0;
+	size_t start = 100000000;
+	size_t max_size = 100000000;
 
-	size_t sizes = ((max_size-start) / step)+1;
+	size_t sizes = ((max_size-start) / (double)step)+1;
 	double*** results = createResultsMatrix(sizes, nEvalFunctions);
 
 	runTester(results, runs, start, sizes, step);
@@ -158,13 +212,13 @@ void runTester(double*** results, size_t runs, size_t start, size_t sizes, size_
 		for(size_t i = 0; i < sizes; i++) {
 			size_t current_size = i*step + start;
 			printf("array size=%lu \t runs=%lu\n", current_size, runs );
-			printf("Pattern \t Sequential 	\t Parallel\n");
+			printf("Pattern \t\t\t Sequential 	\t Parallel\n");
 			for(size_t j = 0; j < nEvalFunctions; j++){
 				for(size_t k = 0; k < 2; k++){
 					results[i][j][k] = results[i][j][k] / runs;
 				}
 
-				printf("%s \t\t %f us \t %f us \n", evalNames[j], results[i][j][SEQ], results[i][j][PAR]);
+				printf("%s \t\t\t %f us \t %f us \n", evalNames[j], results[i][j][SEQ], results[i][j][PAR]);
 			}
 			printf("\n");
 		}
