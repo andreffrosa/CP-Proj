@@ -150,7 +150,7 @@ int main(int argc, char** argv) {
 TYPE* createRandomArray(size_t n) {
 	TYPE *src = malloc(sizeof(*src) * n);
 
-	for (int i = 0; i < n; i++)
+	for (size_t i = 0; i < n; i++)
 		src[i] = drand48();
 
 	return src;
@@ -159,9 +159,9 @@ TYPE* createRandomArray(size_t n) {
 double*** createResultsMatrix(size_t sizes, size_t functions) {
 	double*** results = malloc( sizes*sizeof(double**) );
 
-	for(int i = 0; i < sizes; i++){
+	for(size_t i = 0; i < sizes; i++){
 		results[i] = malloc( functions*sizeof(double*) );
-		for(int j = 0; j < functions; j++) {
+		for(size_t j = 0; j < functions; j++) {
 			results[i][j] = malloc(2*sizeof(double));
 			bzero(results[i][j], 2*sizeof(double));
 		}
@@ -188,7 +188,10 @@ void runTester(double*** results, size_t runs, size_t start, size_t sizes, size_
 		TYPE* dest = malloc (current_size*sizeof(TYPE));
 
 		for(size_t f = 0; f < nEvalFunctions; f++) {
+			//printf("Current pattern: %s\n", evalNames[f]);
 			for(size_t run = 0; run < runs; run++) {
+				printf("Size=%lu \t pattern=%s \t run=%lu/%lu \n", current_size, evalNames[f], run, runs-1);
+
 				// Parallel
 				unsigned long t;
 				t = evalFunction[f](src, dest, current_size, sizeof(TYPE), PAR);
