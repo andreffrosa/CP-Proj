@@ -131,10 +131,10 @@ int main(int argc, char** argv) {
 
 	// processArgs
 
-	size_t runs = 3;
+	size_t runs = 1;
 	size_t step = 0;
-	size_t start = 100000000;
-	size_t max_size = 100000000;
+	size_t start = 10000000;
+	size_t max_size = 10000000;
 
 	size_t sizes = ((max_size-start) / (double)step)+1;
 	double*** results = createResultsMatrix(sizes, nEvalFunctions);
@@ -190,7 +190,7 @@ void runTester(double*** results, size_t runs, size_t start, size_t sizes, size_
 		for(size_t f = 0; f < nEvalFunctions; f++) {
 			//printf("Current pattern: %s\n", evalNames[f]);
 			for(size_t run = 0; run < runs; run++) {
-				printf("Size=%lu \t pattern=%s \t run=%lu/%lu \n", current_size, evalNames[f], run, runs-1);
+				printf("Size=%lu \t pattern=%s \t run=%lu/%lu \n", current_size, evalNames[f], run+1, runs);
 
 				// Parallel
 				unsigned long t;
