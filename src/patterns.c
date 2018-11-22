@@ -13,15 +13,15 @@ void map (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(voi
 
 	// Define the grainsize
 	//#pragma cilk grainsize = max(1024, min(nJob/(__cilkrts_get_nworkers()), 2048))
-	cilk_for (int i = 0; i < nJob; i++)
-	worker(dest + i * sizeJob, src + i * sizeJob);
+	cilk_for (size_t i = 0; i < nJob; i++)
+		worker(dest + i * sizeJob, src + i * sizeJob);
 }
 
 void map_seq (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2)) {
 	assert (dest != NULL);
 	assert (src != NULL);
 	assert (worker != NULL);
-	for (int i=0; i < nJob; i++) {
+	for (size_t i = 0; i < nJob; i++) {
 		worker(dest + i * sizeJob, src + i * sizeJob);
 	}
 }
@@ -84,10 +84,10 @@ void pipeline (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker
 	memcpy(dest, src, nJob*sizeJob);
 
 	// Start of the pipeline
-	unsigned int limit = nWorkers-1;
-	for(int i = 0; i < limit; i++) {
+	size_t limit = nWorkers-1;
+	for(size_t i = 0; i < limit; i++) {
 		// Compute each worker
-		for( int j = 0; j <= i; j++) {
+		for( size_t j = 0; j <= i; j++) {
 			void* job = dest + (i-j)*sizeJob;
 			cilk_spawn workerList[j](job, job);
 		}
@@ -96,9 +96,9 @@ void pipeline (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker
 
 	// Normal functioning of the pipeline
 	limit = nJob;
-	for(int i =  nWorkers-1; i < limit; i++) {
+	for(size_t i =  nWorkers-1; i < limit; i++) {
 		// Compute each worker
-		for( int j = 0; j < nWorkers; j++) {
+		for( size_t j = 0; j < nWorkers; j++) {
 			void* job = dest + (i-j)*sizeJob;
 			cilk_spawn workerList[j](job, job);
 		}
@@ -107,9 +107,9 @@ void pipeline (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker
 
 	// Finish of the ramaining tasks
 	limit = nJob + nWorkers-1;
-	for(int i = nJob; i < limit; i++) {
+	for(size_t i = nJob; i < limit; i++) {
 		// Compute each worker
-		for( int j = i - nJob + 1; j < nWorkers; j++) {
+		for( size_t j = i - nJob + 1; j < nWorkers; j++) {
 			void* job = dest + (i-j)*sizeJob;
 			cilk_spawn workerList[j](job, job);
 		}
@@ -131,13 +131,13 @@ void multiple_pipeline (void *dest, void *src, size_t nJob, size_t sizeJob, void
 		size_t nBatches = (nJob / batchSize) + ( nJob % batchSize == 0 ? 0 : 1);
 
 		// Start of the pipeline
-		unsigned int limit = nWorkers-1;
-		for(int i = 0; i < limit; i++) {
+		size_t limit = nWorkers-1;
+		for(size_t i = 0; i < limit; i++) {
 			// Compute each worker
-			for( int j = 0; j <= i; j++) {
+			for( size_t j = 0; j <= i; j++) {
 				size_t length = (i-j == nBatches-1) ? nJob-(nBatches-1)*batchSize : batchSize;
 				//cilk_spawn workerList[j](job, job);
-				cilk_for( int k = 0; k < length; k++) {
+				cilk_for( size_t k = 0; k < length; k++) {
 					void* job = dest + ((i-j)*batchSize+k)*sizeJob;
 					workerList[j](job, job);
 				}
@@ -147,12 +147,12 @@ void multiple_pipeline (void *dest, void *src, size_t nJob, size_t sizeJob, void
 
 		// Normal functioning of the pipeline
 		limit = nBatches;
-		for(int i =  nWorkers-1; i < limit; i++) {
+		for(size_t i =  nWorkers-1; i < limit; i++) {
 			// Compute each worker
-			for( int j = 0; j < nWorkers; j++) {
+			for( size_t j = 0; j < nWorkers; j++) {
 				size_t length = (i-j == nBatches-1) ? nJob-(nBatches-1)*batchSize : batchSize;
 				//cilk_spawn workerList[j](job, job);
-				cilk_for( int k = 0; k < length; k++) {
+				cilk_for( size_t k = 0; k < length; k++) {
 					void* job = dest + ((i-j)*batchSize+k)*sizeJob;
 					workerList[j](job, job);
 				}
@@ -162,12 +162,12 @@ void multiple_pipeline (void *dest, void *src, size_t nJob, size_t sizeJob, void
 
 		// Finish of the ramaining tasks
 		limit = nBatches + nWorkers-1;
-		for(int i = nBatches; i < limit; i++) {
+		for(size_t i = nBatches; i < limit; i++) {
 			// Compute each worker
-			for( int j = i - nBatches + 1; j < nWorkers; j++) {
+			for( size_t j = i - nBatches + 1; j < nWorkers; j++) {
 				size_t length = (i-j == nBatches-1) ? nJob-(nBatches-1)*batchSize : batchSize;
 				//cilk_spawn workerList[j](job, job);
-				cilk_for( int k = 0; k < length; k++) {
+				cilk_for( size_t k = 0; k < length; k++) {
 					void* job = dest + ((i-j)*batchSize+k)*sizeJob;
 					workerList[j](job, job);
 				}
@@ -182,9 +182,9 @@ void pipeline_seq (void *dest, void *src, size_t nJob, size_t sizeJob, void (*wo
 	assert (src != NULL);
 	assert (workerList != NULL);
 
-	for (int i=0; i < nJob; i++) {
+	for (size_t i=0; i < nJob; i++) {
 		memcpy (dest + i * sizeJob, src + i * sizeJob, sizeJob);
-		for (int j = 0;  j < nWorkers;  j++)
+		for (size_t j = 0;  j < nWorkers;  j++)
 			workerList[j](dest + i * sizeJob, dest + i * sizeJob);
 	}
 }
@@ -194,15 +194,15 @@ void farm (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(vo
 	assert (src != NULL);
 	assert (worker != NULL);
 
-	cilk_for(int i = 0; i < nWorkers; i++){
+	cilk_for(size_t i = 0; i < nWorkers; i++){
 		// Compute the amount of work each worker gets, distributing the remaining across multiple workers
 		size_t batchSize = (nJob / nWorkers) + (( i < nJob % nWorkers) ? 1 : 0);
 
 		// Compute the start of the worker's batch
-		int start = i*(nJob / nWorkers) + (( i < nJob % nWorkers) ? i : nJob % nWorkers);
+		size_t start = i*(nJob / nWorkers) + (( i < nJob % nWorkers) ? i : nJob % nWorkers);
 
 		// In each worker, execute serially each job on his batch
-		for(int j = 0; j < batchSize; j++ ) {
+		for(size_t j = 0; j < batchSize; j++ ) {
 			worker(dest + (start+j) * sizeJob, src + (start+j) * sizeJob);
 		}
 	}

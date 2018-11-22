@@ -5,7 +5,6 @@
 
 int debug = 0;
 
-
 void printDouble (const double *src, size_t n, const char *msg) {
     if (debug) {
         printf ("%s %s: ", msg, "double");
