@@ -132,7 +132,7 @@ int main(int argc, char** argv) {
 	// processArgs
 
 	size_t runs = 1;
-	size_t step = 0;
+	size_t step = 1;
 	size_t start = 10000000;
 	size_t max_size = 10000000;
 
@@ -170,8 +170,8 @@ double*** createResultsMatrix(size_t sizes, size_t functions) {
 }
 
 void freeResultsMatrix(double*** results, size_t sizes, size_t functions) {
-	for(int i = 0; i < sizes; i++){
-		for(int j = 0; j < functions; j++) {
+	for(size_t i = 0; i < sizes; i++){
+		for(size_t j = 0; j < functions; j++) {
 			free(results[i][j]);
 		}
 		free(results[i]);
