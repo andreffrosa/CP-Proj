@@ -4,6 +4,7 @@
 #include <strings.h>
 #include <stdlib.h>
 //#include <unistd.h>
+#include <time.h>
 
 #include "patterns.h"
 
@@ -22,18 +23,32 @@ static void workerAddOne(void* a, const void* b) {
     *(TYPE *)a = *(TYPE *)b + 1;
 }
 
-void evalMap(void* src, void* dest, size_t nJob, size_t size, MODE mode) {
+
+//https://www.gnu.org/software/libc/manual/html_node/CPU-Time.html para colocar na bibliografia
+
+unsigned long evalMap(void* src, void* dest, size_t nJob, size_t size, MODE mode) {
+	clock_t start, end;
+	unsigned us_cpu_time_used;
+
 	if( mode == SEQ) {
+		start = clock();
 		map (dest, src, nJob, size, workerAddOne);
+		end = clock();
 	} else {
+		start = clock();
 		map_seq (dest, src, nJob, size, workerAddOne);
+		end = clock();
 	}
+
+	us_cpu_time_used = (unsigned long)(((double) (end - start)) / (CLOCKS_PER_SEC / (1000*1000))); // in microseconds
+
+	return us_cpu_time_used;
 }
 
-typedef void (*EVALFUNCTION)(void *, void*, size_t, size_t, MODE);
+typedef unsigned long (*EVALFUNCTION)(void *, void*, size_t, size_t, MODE);
 
 EVALFUNCTION evalFunction[] = {
-    evalMap,
+    evalMap
     /*testReduce,
     testScan,
     testPack,
@@ -111,11 +126,13 @@ void runTester(double*** result, size_t runs, size_t start, size_t sizes, size_t
 		for(size_t f = 0; f < nEvalFunctions; f++) {
 			for(size_t run = 0; run < runs; run++) {
 				// Parallel
-				printf("parallel_%s\n", evalNames[f]);
-				evalFunction[f](src, dest, current_size, sizeof(TYPE), PAR);
+				unsigned long t;
+				t = evalFunction[f](src, dest, current_size, sizeof(TYPE), PAR);
+				printf("parallel_%s %lu microseconds\n", evalNames[f], t);
+
 				// Seq
-				printf("sequential_%s\n", evalNames[f]);
-				evalFunction[f](src, dest, current_size, sizeof(TYPE), SEQ);
+				t = evalFunction[f](src, dest, current_size, sizeof(TYPE), SEQ);
+				printf("sequential_%s %lu microseconds\n", evalNames[f], t);
 			}
 		}
 		free(src);
