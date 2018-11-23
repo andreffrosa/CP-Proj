@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "patterns.h"
 
@@ -126,7 +127,8 @@ char *evalNames[] = {
 
 int nEvalFunctions = sizeof (evalFunction)/sizeof(evalFunction[0]);
 
-static void processArgs(int argc, char** argv, size_t* runs, size_t* step, size_t* start, size_t* max_size);
+static void processArgs(int argc, char** argv, size_t* runs, size_t* step, size_t* start, size_t* n_steps);
+void saveResults(double*** results, size_t x_base, size_t y_base, size_t start, size_t n_steps, char* filePattern);
 
 // tester -n 10 -s 1000
 int main(int argc, char** argv) {
@@ -135,30 +137,53 @@ int main(int argc, char** argv) {
 	size_t runs = 1;
 	size_t step = 10000;
 	size_t start = 10000;
-	size_t max_size = 100000;
+	size_t n_steps = 10;
 
 	// Initialize arguments
-	processArgs(argc, argv, &runs, &step, &start, &max_size);
+	processArgs(argc, argv, &runs, &step, &start, &n_steps);
 
-	printf("runs=%lu \t step=%lu \t start=%lu \t max_size=%lu \n", runs, step, start, max_size);
+	printf("runs=%lu \t step=%lu \t start=%lu \t n_steps=%lu \n", runs, step, start, n_steps);
 
-	size_t sizes = ((max_size-start) / (double)step)+1;
-	double*** results = createResultsMatrix(sizes, nEvalFunctions);
+	//size_t sizes = ((n_steps-start) / (double)step)+1;
+	double*** results = createResultsMatrix(n_steps, nEvalFunctions);
 
-	runTester(results, runs, start, sizes, step);
-	//saveResults();
+	runTester(results, runs, start, n_steps, step);
 
-	freeResultsMatrix(results, sizes, nEvalFunctions);
+	saveResults(results, 1, step, start, n_steps, "./plots/%s.csv");
+
+	freeResultsMatrix(results, n_steps, nEvalFunctions);
 
 	return 0;
 }
 
-static void processArgs(int argc, char** argv, size_t* runs, size_t* step, size_t* start, size_t* max_size) {
+void saveResults(double*** results, size_t y_base, size_t step, size_t start, size_t n_steps, char* filePattern) {
+
+	FILE * fp;
+
+	for( size_t pattern = 0; pattern < nEvalFunctions; pattern++) {
+		// Compute file name
+		char fileName[strlen(filePattern)+strlen(evalNames[pattern])+1];
+		sprintf(fileName, filePattern, evalNames[pattern]);
+
+		fp = fopen (fileName, "w");
+
+		fprintf (fp, ";%s;%s\n", "sequential", "parallel");
+		int x_min = start / step;
+		int x_max = (start / step) + n_steps;
+		for( int x = x_min; x < x_max; x++) {
+			fprintf (fp, "%d;%f;%f\n", x, results[x-x_min][pattern][SEQ], results[x-x_min][pattern][PAR]);
+		}
+
+		fclose (fp);
+	}
+}
+
+static void processArgs(int argc, char** argv, size_t* runs, size_t* step, size_t* start, size_t* n_steps) {
 	int c;
 
 	opterr = 0;
 
-	while ((c = getopt(argc, argv, "r:s:i:m:")) != -1)
+	while ((c = getopt(argc, argv, "r:s:i:n:")) != -1)
 		switch (c) {
 		case 'r':
 			*runs = strtol (optarg, NULL, 10);;
@@ -169,11 +194,11 @@ static void processArgs(int argc, char** argv, size_t* runs, size_t* step, size_
 		case 'i':
 			*start = strtol (optarg, NULL, 10);
 			break;
-		case 'm':
-			*max_size = strtol (optarg, NULL, 10);
+		case 'n':
+			*n_steps = strtol (optarg, NULL, 10);
 			break;
 		case '?':
-			if (optopt == 'r' || optopt == 's' || optopt == 'i' || optopt == 'm' )
+			if (optopt == 'r' || optopt == 's' || optopt == 'i' || optopt == 'n' )
 				fprintf(stderr, "Option -%c is followed a the number.\n", optopt);
 			/*else if (isprint(optopt))
 				fprintf(stderr, "Unknown option `-%c'.\n", optopt);*/
@@ -192,10 +217,10 @@ TYPE* createRandomArray(size_t n) {
 	return src;
 }
 
-double*** createResultsMatrix(size_t sizes, size_t functions) {
-	double*** results = malloc( sizes*sizeof(double**) );
+double*** createResultsMatrix(size_t n_steps, size_t functions) {
+	double*** results = malloc( n_steps*sizeof(double**) );
 
-	for(size_t i = 0; i < sizes; i++){
+	for(size_t i = 0; i < n_steps; i++){
 		results[i] = malloc( functions*sizeof(double*) );
 		for(size_t j = 0; j < functions; j++) {
 			results[i][j] = malloc(2*sizeof(double));
@@ -205,8 +230,8 @@ double*** createResultsMatrix(size_t sizes, size_t functions) {
 	return results;
 }
 
-void freeResultsMatrix(double*** results, size_t sizes, size_t functions) {
-	for(size_t i = 0; i < sizes; i++){
+void freeResultsMatrix(double*** results, size_t n_steps, size_t functions) {
+	for(size_t i = 0; i < n_steps; i++){
 		for(size_t j = 0; j < functions; j++) {
 			free(results[i][j]);
 		}
@@ -214,9 +239,9 @@ void freeResultsMatrix(double*** results, size_t sizes, size_t functions) {
 	}
 }
 
-void runTester(double*** results, size_t runs, size_t start, size_t sizes, size_t step) {
+void runTester(double*** results, size_t runs, size_t start, size_t n_steps, size_t step) {
 
-	for(size_t i = 0; i < sizes; i++) {
+	for(size_t i = 0; i < n_steps; i++) {
 		size_t current_size = i*step + start;
 		//printf("Current_size: %lu\n", current_size);
 
@@ -248,7 +273,7 @@ void runTester(double*** results, size_t runs, size_t start, size_t sizes, size_
 
 	// Compute the average between the different runs
 	if( runs >= 1 ) {
-		for(size_t i = 0; i < sizes; i++) {
+		for(size_t i = 0; i < n_steps; i++) {
 			size_t current_size = i*step + start;
 			printf("array size=%lu \t runs=%lu\n", current_size, runs );
 			printf("Pattern \t\t\t Sequential 	\t Parallel\n");
