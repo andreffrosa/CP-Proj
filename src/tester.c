@@ -6,6 +6,9 @@
 #include <unistd.h>
 #include <string.h>
 
+//#include "cilk/cilk.h"
+#include "cilk/cilk_api.h"
+
 #include "patterns.h"
 
 #define TYPE double
@@ -42,11 +45,11 @@ unsigned long evalMap(void* src, void* dest, size_t nJob, size_t size, MODE mode
 
 	if( mode == SEQ) {
 		start = clock();
-		map_seq (dest, src, nJob, size, workerAddOne);
+		map_seq (dest, src, nJob, size, workerMultTwo);
 		end = clock();
 	} else {
 		start = clock();
-		map (dest, src, nJob, size, workerAddOne);
+		map (dest, src, nJob, size, workerMultTwo);
 		end = clock();
 	}
 
@@ -142,14 +145,14 @@ int main(int argc, char** argv) {
 	// Initialize arguments
 	processArgs(argc, argv, &runs, &step, &start, &n_steps);
 
-	printf("runs=%lu \t step=%lu \t start=%lu \t n_steps=%lu \n", runs, step, start, n_steps);
+	printf("runs=%lu \t step=%lu \t start=%lu \t n_steps=%lu cilk_workers=%d \n", runs, step, start, n_steps, __cilkrts_get_nworkers());
 
 	//size_t sizes = ((n_steps-start) / (double)step)+1;
 	double*** results = createResultsMatrix(n_steps, nEvalFunctions);
 
 	runTester(results, runs, start, n_steps, step);
 
-	saveResults(results, 1, step, start, n_steps, "./plots/%s.csv");
+	saveResults(results, 1, step, start, n_steps, "./plots/%s%s");
 
 	freeResultsMatrix(results, n_steps, nEvalFunctions);
 
@@ -162,8 +165,8 @@ void saveResults(double*** results, size_t y_base, size_t step, size_t start, si
 
 	for( size_t pattern = 0; pattern < nEvalFunctions; pattern++) {
 		// Compute file name
-		char fileName[strlen(filePattern)+strlen(evalNames[pattern])+1];
-		sprintf(fileName, filePattern, evalNames[pattern]);
+		char fileName[strlen(filePattern)+strlen(evalNames[pattern])+4];
+		sprintf(fileName, filePattern, evalNames[pattern], ".csv");
 
 		fp = fopen (fileName, "w");
 
@@ -177,6 +180,10 @@ void saveResults(double*** results, size_t y_base, size_t step, size_t start, si
 		fclose (fp);
 	}
 }
+
+/*void producePlotScript(char* filePattern, char* patternName, ) {
+
+}*/
 
 static void processArgs(int argc, char** argv, size_t* runs, size_t* step, size_t* start, size_t* n_steps) {
 	int c;

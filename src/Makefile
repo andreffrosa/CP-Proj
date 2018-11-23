@@ -12,7 +12,7 @@ main: $(O)
 	$(CC) -o $@ $^ $(LDFLAGS)
 	
 tester:
-	$(CC) $(CFLAGS) -o $@ $^ tester.c patterns.c $(LDFLAGS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ tester.c patterns.c 
 
 clean:
 	rm -f $(TARGET) $(O) tester
