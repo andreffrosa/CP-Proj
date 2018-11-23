@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <stdint.h>
-
 #include <strings.h>
 #include <stdlib.h>
 #include <time.h>
+#include <unistd.h>
 
 #include "patterns.h"
 
@@ -126,15 +126,21 @@ char *evalNames[] = {
 
 int nEvalFunctions = sizeof (evalFunction)/sizeof(evalFunction[0]);
 
+static void processArgs(int argc, char** argv, size_t* runs, size_t* step, size_t* start, size_t* max_size);
+
 // tester -n 10 -s 1000
 int main(int argc, char** argv) {
 
-	// processArgs
-
+	// Default values
 	size_t runs = 1;
-	size_t step = 1;
-	size_t start = 10000000;
-	size_t max_size = 10000000;
+	size_t step = 10000;
+	size_t start = 10000;
+	size_t max_size = 100000;
+
+	// Initialize arguments
+	processArgs(argc, argv, &runs, &step, &start, &max_size);
+
+	printf("runs=%lu \t step=%lu \t start=%lu \t max_size=%lu \n", runs, step, start, max_size);
 
 	size_t sizes = ((max_size-start) / (double)step)+1;
 	double*** results = createResultsMatrix(sizes, nEvalFunctions);
@@ -145,6 +151,36 @@ int main(int argc, char** argv) {
 	freeResultsMatrix(results, sizes, nEvalFunctions);
 
 	return 0;
+}
+
+static void processArgs(int argc, char** argv, size_t* runs, size_t* step, size_t* start, size_t* max_size) {
+	int c;
+
+	opterr = 0;
+
+	while ((c = getopt(argc, argv, "r:s:i:m:")) != -1)
+		switch (c) {
+		case 'r':
+			*runs = strtol (optarg, NULL, 10);;
+			break;
+		case 's':
+			*step = strtol (optarg, NULL, 10);
+			break;
+		case 'i':
+			*start = strtol (optarg, NULL, 10);
+			break;
+		case 'm':
+			*max_size = strtol (optarg, NULL, 10);
+			break;
+		case '?':
+			if (optopt == 'r' || optopt == 's' || optopt == 'i' || optopt == 'm' )
+				fprintf(stderr, "Option -%c is followed a the number.\n", optopt);
+			/*else if (isprint(optopt))
+				fprintf(stderr, "Unknown option `-%c'.\n", optopt);*/
+			else
+				fprintf(stderr, "Unknown option character `\\x%x'.\n", optopt);
+			break;
+		}
 }
 
 TYPE* createRandomArray(size_t n) {
@@ -211,7 +247,7 @@ void runTester(double*** results, size_t runs, size_t start, size_t sizes, size_
 	}
 
 	// Compute the average between the different runs
-	if( runs > 1 ) {
+	if( runs >= 1 ) {
 		for(size_t i = 0; i < sizes; i++) {
 			size_t current_size = i*step + start;
 			printf("array size=%lu \t runs=%lu\n", current_size, runs );
