@@ -39,7 +39,7 @@ static void workerDivTwo(void* a, const void* b) {
 static void workerHeavy(void* a, const void* b) {
     // a = b / 2
 
-    for(int i = 0; i < (*((int*)b))*10; i++ ) {
+    for(int i = 0; i < 10; i++ ) {
     	*(TYPE *)a = *(TYPE *)b / 2;
     	*(TYPE *)a = *(TYPE *)b * 2;
     	*(TYPE *)a = *(TYPE *)b + 1;
