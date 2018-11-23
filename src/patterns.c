@@ -117,6 +117,7 @@ void pipeline (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker
 	}
 }
 
+//pipeline_farm
 void multiple_pipeline (void *dest, void *src, size_t nJob, size_t sizeJob, void (*workerList[])(void *v1, const void *v2), size_t nWorkers, size_t batchSize) {
 	assert (dest != NULL);
 	assert (src != NULL);

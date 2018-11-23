@@ -36,7 +36,7 @@ static void workerDivTwo(void* a, const void* b) {
     *(TYPE *)a = *(TYPE *)b / 2;
 }
 
-static void workerHeavy(void* a, const void* b) {
+/*static void workerHeavy(void* a, const void* b) {
     // a = b / 2
 
     for(int i = 0; i < 10; i++ ) {
@@ -44,8 +44,13 @@ static void workerHeavy(void* a, const void* b) {
     	*(TYPE *)a = *(TYPE *)b * 2;
     	*(TYPE *)a = *(TYPE *)b + 1;
     }
-}
+}*/
 
+static void workerSleep(void* a, const void* b) {
+    // a = b / 2
+
+    usleep(150);
+}
 
 //https://www.gnu.org/software/libc/manual/html_node/CPU-Time.html para colocar na bibliografia
 
@@ -55,11 +60,11 @@ unsigned long evalMap(void* src, void* dest, size_t nJob, size_t size, MODE mode
 
 	if( mode == SEQ) {
 		start = clock();
-		map_seq (dest, src, nJob, size, workerHeavy);
+		map_seq (dest, src, nJob, size, workerSleep);
 		end = clock();
 	} else {
 		start = clock();
-		map (dest, src, nJob, size, workerHeavy);
+		map (dest, src, nJob, size, workerSleep);
 		end = clock();
 	}
 
@@ -181,10 +186,9 @@ void saveResults(double*** results, size_t y_base, size_t step, size_t start, si
 		fp = fopen (fileName, "w");
 
 		fprintf (fp, ";%s;%s\n", "sequential", "parallel");
-		int x_min = start / step;
-		int x_max = (start / step) + n_steps;
-		for( int x = x_min; x < x_max; x++) {
-			fprintf (fp, "%d;%f;%f\n", x, results[x-x_min][pattern][SEQ], results[x-x_min][pattern][PAR]);
+
+		for( size_t i = 0; i < n_steps; i++) {
+			fprintf (fp, "%lu;%f;%f\n", start+i*step, results[i][pattern][SEQ], results[i][pattern][PAR]);
 		}
 
 		fclose (fp);
