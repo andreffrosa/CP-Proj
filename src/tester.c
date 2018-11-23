@@ -36,6 +36,16 @@ static void workerDivTwo(void* a, const void* b) {
     *(TYPE *)a = *(TYPE *)b / 2;
 }
 
+static void workerHeavy(void* a, const void* b) {
+    // a = b / 2
+
+    for(int i = 0; i < (*((int*)b))*10; i++ ) {
+    	*(TYPE *)a = *(TYPE *)b / 2;
+    	*(TYPE *)a = *(TYPE *)b * 2;
+    	*(TYPE *)a = *(TYPE *)b + 1;
+    }
+}
+
 
 //https://www.gnu.org/software/libc/manual/html_node/CPU-Time.html para colocar na bibliografia
 
@@ -45,11 +55,11 @@ unsigned long evalMap(void* src, void* dest, size_t nJob, size_t size, MODE mode
 
 	if( mode == SEQ) {
 		start = clock();
-		map_seq (dest, src, nJob, size, workerMultTwo);
+		map_seq (dest, src, nJob, size, workerHeavy);
 		end = clock();
 	} else {
 		start = clock();
-		map (dest, src, nJob, size, workerMultTwo);
+		map (dest, src, nJob, size, workerHeavy);
 		end = clock();
 	}
 
