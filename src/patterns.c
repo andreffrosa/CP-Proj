@@ -14,8 +14,8 @@ void map (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(voi
 
 	// Define the grainsize
 	//#pragma cilk grainsize = max(1024, min(nJob/(__cilkrts_get_nworkers()), 2048))
-	cilk_for (int i = 0; i < nJob; i++)
-	worker(dest + i * sizeJob, src + i * sizeJob);
+	cilk_for (size_t i = 0; i < nJob; i++)
+		worker(dest + i * sizeJob, src + i * sizeJob);
 }
 
 void map_seq (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2)) {
