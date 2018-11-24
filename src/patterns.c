@@ -179,7 +179,7 @@ void pipeline_farm (void *dest, void *src, size_t nJob, size_t sizeJob, void (*w
 				size_t length = (i-j == nBatches-1) ? nJob-(nBatches-1)*nFarms : nFarms;
 
 				cilk_for( int k = 0; k < length; k++) {
-					void* job = dest + ((i-j)*batchSize+k)*sizeJob;
+					void* job = dest + ((i-j)*nFarms+k)*sizeJob;
 					workerList[j](job, job);
 				}
 			}
@@ -193,7 +193,7 @@ void pipeline_farm (void *dest, void *src, size_t nJob, size_t sizeJob, void (*w
 				size_t length = (i-j == nBatches-1) ? nJob-(nBatches-1)*nFarms : nFarms;
 
 				cilk_for( int k = 0; k < length; k++) {
-					void* job = dest + ((i-j)*batchSize+k)*sizeJob;
+					void* job = dest + ((i-j)*nFarms+k)*sizeJob;
 					workerList[j](job, job);
 				}
 			}
@@ -207,7 +207,7 @@ void pipeline_farm (void *dest, void *src, size_t nJob, size_t sizeJob, void (*w
 				size_t length = (i-j == nBatches-1) ? nJob-(nBatches-1)*nFarms : nFarms;
 
 				cilk_for( int k = 0; k < length; k++) {
-					void* job = dest + ((i-j)*batchSize+k)*sizeJob;
+					void* job = dest + ((i-j)*nFarms+k)*sizeJob;
 					workerList[j](job, job);
 				}
 			}
