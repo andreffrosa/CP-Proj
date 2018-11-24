@@ -126,7 +126,9 @@ void multiple_pipeline (void *dest, void *src, size_t nJob, size_t sizeJob, void
 	if( batchSize == 1)
 		pipeline(dest, src, nJob, sizeJob, workerList, nWorkers);
 	else {
-		memcpy(dest, src, nJob*sizeJob);
+		cilk_for(size_t i = 0; i < nJob; i++) {
+			memcpy(dest + i*sizeJob, src + i*sizeJob, sizeJob);
+		}
 
 		size_t nBatches = (nJob / batchSize) + ( nJob % batchSize == 0 ? 0 : 1);
 
