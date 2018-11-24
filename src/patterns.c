@@ -172,7 +172,7 @@ void pipeline_farm (void *dest, void *src, size_t nJob, size_t sizeJob, void (*w
 		size_t nBatches = (nJob / nFarms) + ( nJob % nFarms == 0 ? 0 : 1);
 
 		// Start of the pipeline
-		unsigned int limit = nWorkers-1;
+		int limit = nWorkers-1;
 		for(int i = 0; i < limit; i++) {
 			// Compute each worker
 			for( int j = 0; j <= i; j++) {
