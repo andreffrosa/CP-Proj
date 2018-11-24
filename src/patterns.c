@@ -3,6 +3,7 @@
 #include "patterns.h"
 #include "cilk/cilk.h"
 #include "cilk/cilk_api.h"
+#include "prefix_sum.h"
 
 #include <stdio.h>
 
@@ -38,8 +39,18 @@ void reduce (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(
 	}
 }
 
-void scan (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2, const void *v3)) {
-	/* To be implemented */
+void scan(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2, const void *v3)) {
+	assert (dest != NULL);
+	assert (src != NULL);
+	assert (worker != NULL);
+	
+	// TODO resolve neutral element; wait for prof message
+	double neutral_element = 0;
+	
+	prefix_sum(src, dest, nJob, sizeJob, worker, (void *) &neutral_element);
+}
+
+void scan_seq (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2, const void *v3)) {
 	assert (dest != NULL);
 	assert (src != NULL);
 	assert (worker != NULL);
@@ -63,14 +74,40 @@ int pack (void *dest, void *src, size_t nJob, size_t sizeJob, const int *filter)
 }
 
 void gather (void *dest, void *src, size_t nJob, size_t sizeJob, const int *filter, int nFilter) {
-	/* To be implemented */
+	assert (dest != NULL);
+	assert (src != NULL);
+	assert (filter != NULL);
+	
+	cilk_for (int i=0; i < nFilter; i++) {
+		memcpy (dest + i * sizeJob, src + filter[i] * sizeJob, sizeJob);
+	}
+}
+
+void gather_seq (void *dest, void *src, size_t nJob, size_t sizeJob, const int *filter, int nFilter) {
+	assert (dest != NULL);
+	assert (src != NULL);
+	assert (filter != NULL);
+	
 	for (int i=0; i < nFilter; i++) {
 		memcpy (dest + i * sizeJob, src + filter[i] * sizeJob, sizeJob);
 	}
 }
 
 void scatter (void *dest, void *src, size_t nJob, size_t sizeJob, const int *filter) {
-	/* To be implemented */
+	assert (dest != NULL);
+	assert (src != NULL);
+	assert (filter != NULL);
+	
+	cilk_for (int i=0; i < nJob; i++) {
+		memcpy (dest + filter[i] * sizeJob, src + i * sizeJob, sizeJob);
+	}
+}
+
+void scatter_seq (void *dest, void *src, size_t nJob, size_t sizeJob, const int *filter) {
+	assert (dest != NULL);
+	assert (src != NULL);
+	assert (filter != NULL);
+	
 	for (int i=0; i < nJob; i++) {
 		memcpy (dest + filter[i] * sizeJob, src + i * sizeJob, sizeJob);
 	}
