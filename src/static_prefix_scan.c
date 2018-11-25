@@ -55,9 +55,9 @@ static void up_pass(void *tree, size_t node_index, void *input, size_t low, size
 		void *right_child = left_child + tree_node_size;
 		
 		up_pass(left_child, 2 * node_index + 1, input, low, mid, size_job, worker);
-		up_pass(right_child, 2 * node_index + 2, input, mid, high, size_job, worker);
+		cilk_spawn up_pass(right_child, 2 * node_index + 2, input, mid, high, size_job, worker);
 		
-		// cilk_sync;
+		cilk_sync;
 		worker(tree + RANGE_MEM_SIZE , left_child + RANGE_MEM_SIZE, right_child + RANGE_MEM_SIZE );
 	}
 	
@@ -80,9 +80,9 @@ static void down_pass(void *tree, size_t node_index, void *output, size_t size_j
 		worker(right_child + RANGE_MEM_SIZE + size_job, tree + RANGE_MEM_SIZE + size_job, left_child + RANGE_MEM_SIZE);
 		
 		down_pass(left_child, 2 * node_index + 1, output, size_job, worker);
-		down_pass(right_child, 2 * node_index + 2, output, size_job, worker);
+		cilk_spawn down_pass(right_child, 2 * node_index + 2, output, size_job, worker);
 		
-		// cilk_sync;
+		cilk_sync;
 	}	
 }
 
