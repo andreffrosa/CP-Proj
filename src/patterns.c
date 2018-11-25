@@ -44,26 +44,36 @@ void general_reduce (void *dest, void *src, size_t nJob,  size_t sizeJob,
 		reduce(dest, src, nJob, sizeJob, worker);
 	else{
 
-
-		memcpy (dest, src, sizeJob);
+		size_t currentSize = nJob;
+		void * aux = malloc(currentSize * sizeJob);
+		void * read = src;
+		void * write = dest;
 
 		do{
 			size_t nThreads = nJob / splitFacor;
 
+
+
 			if(nThreads == 0){
 				for (int i = 1;  i < nJob;  i++)
-				   worker(dest, dest, src + i * sizeJob);
+				   worker(write, write, read + i * sizeJob);
 			}else{
 
 				cilk_for(size_t currentThread = 0; currentThread < nThreads; j++){
 					size_t lenght = slipFactor + ( currenThread < nJob%splitFactor ? 1 : 0);
 					size_t offset = nJobs/nThreds + (currentThread < nJobs % nThreds ? currentThread : nJobs%Threds);
 					for (int i = 1;  i < lenght;  i++)
-						worker(dest + offset , dest + offset, (offset+i) * sizeJob);
+						worker( write + currentThread*size, write + currentThread*size, read + (offset +i)*size)
 					}
+
+				currentSize = nThreads;
+				read = read == dest ? aux : dest;
+				write = write == dest && currentSize > splitfactor ? aux : dest;
 			}
 
 		}while(nThreads > 1);
+
+		free(aux);
 	}
 }
 
