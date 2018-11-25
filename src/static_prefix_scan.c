@@ -1,11 +1,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <cilk/cilk.h>
-#include "prefix_sum.h"
-#include <stdio.h>
+#include <assert.h>
+#include "prefix_scan.h"
 
 /*
- * Implementation of parallel Prefix-Sum algorithm using an array-based binary tree.
+ * Implementation of parallel Prefix-Scan algorithm using an array-based binary tree.
  */
 
 /* Implementation of Binary Tree Node
@@ -17,10 +17,11 @@
  *	 size_job from_left
  * 	}
  *
- * The number of elements of the Binary tree is known at the start, 
- * so an array-based binary tree implementation is used, which allows for 
- * a single big (contiguous) memory allocation instead of several small, 
- * on-demand (disperse) allocations, providing better results.
+ * The number of elements of the Binary tree is known at the start, so an array-based binary tree 
+ * implementation is used. The array based implementation allows for a single big (contiguous, cache friendly) 
+ * memory allocation instead of several small, on-demand (disperse/fragmented, cache unfriendly) 
+ * allocations. This provides better results, since less time is spent on mallocs (system calls), which are
+ * inherently slow.
  */	
  
  // Size of range[] in a tree node
@@ -34,11 +35,11 @@ static size_t tree_node_size = 0;
  */
 static size_t get_total_tree_size(size_t max_width) {
 	
-	return (max_width * max_width + max_width) / 2;
+	return 2 * max_width - 1;
 }
 
 /*
- * Up pass of the prefix sum algorithm, which builds a binary tree given an input.
+ * Up pass of the prefix scan algorithm, which builds a binary tree given an input.
  */
 static void up_pass(void *tree, size_t node_index, void *input, size_t low, size_t high, size_t size_job, void (*worker)(void *v1, const void *v2, const void *v3)) {
 	
@@ -63,7 +64,7 @@ static void up_pass(void *tree, size_t node_index, void *input, size_t low, size
 }
 
 /*
- * Down pass of the prefix sum algorithm, which fills a binary tree's from_left field, outputting the results of the leaves to an output.
+ * Down pass of the prefix scan algorithm, which fills a binary tree's from_left field, outputting the results of the leaves to an output.
  */
 static void down_pass(void *tree, size_t node_index, void *output, size_t size_job, void (*worker)(void *v1, const void *v2, const void *v3)) {
 	
@@ -86,17 +87,18 @@ static void down_pass(void *tree, size_t node_index, void *output, size_t size_j
 }
 
 /*
- * Execute prefix sum algorithm.
+ * Execute prefix scan algorithm.
  */
-void prefix_sum(void *input, void *output, size_t n_jobs, size_t size_job, void (*worker)(void *v1, const void *v2, const void *v3), void *neutral_element) {
+void prefix_scan(void *input, void *output, size_t n_jobs, size_t size_job, void (*worker)(void *v1, const void *v2, const void *v3), void *neutral_element) {
 	
 	tree_node_size = RANGE_MEM_SIZE + 2 * size_job;
 	
 	void *tree = malloc(tree_node_size *  get_total_tree_size(n_jobs));
 	
+	assert(tree != NULL);
+	
 	up_pass(tree, 0, input, 0, n_jobs, size_job, worker);
 	
-	// TODO Implement neutral value passing; wait for message from prof
 	memcpy(tree + RANGE_MEM_SIZE + size_job, neutral_element, size_job);
 	
 	down_pass(tree, 0, output, size_job, worker);

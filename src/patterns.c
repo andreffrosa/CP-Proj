@@ -3,7 +3,7 @@
 #include "patterns.h"
 #include "cilk/cilk.h"
 #include "cilk/cilk_api.h"
-#include "prefix_sum.h"
+#include "prefix_scan.h"
 
 #include <stdio.h>
 
@@ -47,7 +47,7 @@ void scan(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(voi
 	// TODO resolve neutral element; wait for prof message
 	double neutral_element = 0;
 	
-	prefix_sum(src, dest, nJob, sizeJob, worker, (void *) &neutral_element);
+	prefix_scan(src, dest, nJob, sizeJob, worker, (void *) &neutral_element);
 }
 
 void scan_seq (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2, const void *v3)) {

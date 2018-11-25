@@ -57,7 +57,8 @@ int main(int argc, char* argv[]) {
     if (debug)
         printf ("\n\n");
 
-    for (int i = 0;  i < nTestFunction;  i++) {
+	//for (int i = 0;  i < nTestFunction;  i++) {
+    for (int i = 2;  i < 3;  i++) {
         start = wall_clock_time();
         testFunction[i] (src, N, sizeof(*src));
         end = wall_clock_time();
@@ -65,6 +66,8 @@ int main(int argc, char* argv[]) {
         if (debug)
             printf ("\n\n");
     }
+	
+	free(src);
 
     return 0;
 }
