@@ -74,7 +74,7 @@ static void down_pass(Binary_Node *tree, void *output, size_t size_job, void (*w
 /*
  * Execute prefix scan algorithm.
  */
-void prefix_scan(void *input, void *output, size_t n_jobs, size_t size_job, void (*worker)(void *v1, const void *v2, const void *v3), void *neutral_element) {
+void prefix_scan(void *input, void *output, size_t n_jobs, size_t size_job, void (*worker)(void *v1, const void *v2, const void *v3)) {
 		
 	Binary_Node *tree = malloc(sizeof(Binary_Node));
 	
@@ -82,8 +82,10 @@ void prefix_scan(void *input, void *output, size_t n_jobs, size_t size_job, void
 	
 	up_pass(tree, input, 0, n_jobs, size_job, worker);
 	
-	// TODO Implement neutral value passing; wait for message from prof
+	void *neutral_element = malloc(size_job);
+	worker(neutral_element, NULL, NULL);
 	memcpy(tree->from_left, neutral_element, size_job);
+	free(neutral_element);
 	
 	down_pass(tree, output, size_job, worker);
 }
