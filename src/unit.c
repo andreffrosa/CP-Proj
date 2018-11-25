@@ -10,7 +10,8 @@
 
 #define TYPE double
 #define FMT "%lf"
-
+#define SUM_NEUTRAL 0.0
+#define MULT_NEUTRAL 1.0
 
 //=======================================================
 // Workers
@@ -35,37 +36,52 @@ static void workerMin(void* a, const void* b, const void* c) {
 */
 
 static void workerAdd(void* a, const void* b, const void* c) {
-    // a = b + c
-    *(TYPE *)a = *(TYPE *)b + *(TYPE *)c;
+	TYPE res_b = b == NULL ? SUM_NEUTRAL : *(TYPE *)b;
+	TYPE res_c = c == NULL ? SUM_NEUTRAL : *(TYPE *)c;
+
+   // a = b + c
+    *(TYPE *)a = res_b + res_c;
 }
 
 /*
 static void workerSubtract(void* a, const void* b, const void* c) {
-    // a = n - c
-    *(TYPE *)a = *(TYPE *)b - *(TYPE *)c;
+	TYPE res_b = b == NULL ? SUM_NEUTRAL : *(TYPE *)b;
+	TYPE res_c = c == NULL ? SUM_NEUTRAL : *(TYPE *)c;
+    
+	// a = b - c
+    *(TYPE *)a = res_b - res_c;
 }
 */
 
 /*
 static void workerMultiply(void* a, const void* b, const void* c) {
-    // a = b * c
-    *(TYPE *)a = *(TYPE *)b + *(TYPE *)c;
+    TYPE res_b = b == NULL ? MULT_NEUTRAL : *(TYPE *)b;
+	TYPE res_c = c == NULL ? MULT_NEUTRAL : *(TYPE *)c;
+	
+	// a = b * c
+    *(TYPE *)a = res_b * res_c;
 }
 */
 
 static void workerAddOne(void* a, const void* b) {
+	TYPE res_b = b == NULL ? SUM_NEUTRAL : *(TYPE *)b;
+	
     // a = b + 1
-    *(TYPE *)a = *(TYPE *)b + 1;
+    *(TYPE *)a = res_b + 1;
 }
 
 static void workerMultTwo(void* a, const void* b) {
-    // a = b * 2
-    *(TYPE *)a = *(TYPE *)b * 2;
+    TYPE res_b = b == NULL ? MULT_NEUTRAL : *(TYPE *)b;
+	
+	// a = b * 2
+    *(TYPE *)a = res_b * 2;
 }
 
 static void workerDivTwo(void* a, const void* b) {
-    // a = b / 2
-    *(TYPE *)a = *(TYPE *)b / 2;
+    TYPE res_b = b == NULL ? MULT_NEUTRAL : *(TYPE *)b;
+	
+	// a = b / 2
+    *(TYPE *)a = res_b / 2;
 }
 
 

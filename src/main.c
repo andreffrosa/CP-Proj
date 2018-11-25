@@ -50,14 +50,16 @@ int main(int argc, char* argv[]) {
     printf ("Initializing SRC array\n");
     TYPE *src = malloc (sizeof(*src) * N);
     for (i = 0; i < N; i++)
-        src[i] = drand48();
+        //src[i] = drand48();
+		src[i] = i + 1;
     printf ("Done!\n");
     
     printDouble (src, N, "SRC");
-    if (debug)
+    if (debug) {
         printf ("\n\n");
-
-    for (int i = 0;  i < nTestFunction;  i++) {
+	}
+	
+	for (int i = 0;  i < nTestFunction;  i++) {
         start = wall_clock_time();
         testFunction[i] (src, N, sizeof(*src));
         end = wall_clock_time();
@@ -65,6 +67,8 @@ int main(int argc, char* argv[]) {
         if (debug)
             printf ("\n\n");
     }
+	
+	free(src);
 
     return 0;
 }
