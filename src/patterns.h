@@ -25,6 +25,26 @@ void reduce (
   void (*worker)(void *v1, const void *v2, const void *v3) // [ v1 = op (v2, v3) ]
 );
 
+
+void general_reduce (
+  void *dest,           // Target array
+  void *src,            // Source array
+  size_t nJob,          // # elements in the source array
+  size_t sizeJob,       // Size of each element in the source array
+  void (*worker)(void *v1, const void *v2, const void *v3), // [ v1 = op (v2, v3) ]
+  size_t splitFacor
+);
+
+
+
+void reduce_seq (
+  void *dest,           // Target array
+  void *src,            // Source array
+  size_t nJob,          // # elements in the source array
+  size_t sizeJob,       // Size of each element in the source array
+  void (*worker)(void *v1, const void *v2, const void *v3) // [ v1 = op (v2, v3) ]
+);
+
 void scan (
   void *dest,           // Target array
   void *src,            // Source array
@@ -48,6 +68,17 @@ int pack (
   size_t sizeJob,       // Size of each element in the source array
   const int *filter     // Filer for pack
 );
+
+
+int pack_seq(
+	void *dest,           // Target array
+	void *src,            // Source array
+	size_t nJob,          // # elements in the source array
+	size_t sizeJob,       // Size of each element in the source array
+	const int *filter     // Filer for pack
+);
+
+
 
 void gather (
   void *dest,           // Target array

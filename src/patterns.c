@@ -27,7 +27,51 @@ void map_seq (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)
 	}
 }
 
-void reduce (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2, const void *v3)) {
+void reduce (void *dest, void *src, size_t nJob,  size_t sizeJob,
+		void (*worker)(void *v1, const void *v2, const void *v3)
+{
+
+}
+void general_reduce (void *dest, void *src, size_t nJob,  size_t sizeJob,
+		void (*worker)(void *v1, const void *v2, const void *v3),  size_t splitFacor)
+{
+
+	assert (dest != NULL);
+	assert (src != NULL);
+	assert (worker != NULL);
+
+
+
+	if(splitFacor == 2)
+		reduce(dest, src, nJob, sizeJob, worker);
+	else{
+
+
+		memcpy (dest, src, sizeJob);
+
+		do{
+			size_t nThreads = nJob / splitFacor;
+
+			if(nThreads == 0){
+				for (int i = 1;  i < nJob;  i++)
+				   worker(dest, dest, src + i * sizeJob);
+			}else{
+
+				cilk_for(size_t currentThread = 0; currentThread < nThreads; j++){
+					size_t lenght = slipFactor + ( currenThread < nJob%splitFactor ? 1 : 0);
+					size_t offset = nJobs/nThreds + (currentThread < nJobs % nThreds ? currentThread : nJobs%Threds);
+					for (int i = 1;  i < lenght;  i++)
+						worker(dest + offset , dest + offset, (offset+i) * sizeJob);
+					}
+			}
+
+		}while(nThreads > 1);
+	}
+}
+
+
+
+void reduce_seq (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2, const void *v3)) {
 	/* To be implemented */
 	assert (dest != NULL);
 	assert (src != NULL);
@@ -61,7 +105,15 @@ void scan_seq (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker
 	}
 }
 
-int pack (void *dest, void *src, size_t nJob, size_t sizeJob, const int *filter) {
+
+int pack (void* dest, void* src, size_t nJob, size_t sizeJob, const int* filter)
+{
+
+
+}
+
+
+int pack_seq (void *dest, void *src, size_t nJob, size_t sizeJob, const int *filter) {
 	/* To be implemented */
 	int pos = 0;
 	for (int i=0; i < nJob; i++) {
