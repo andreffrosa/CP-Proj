@@ -1,9 +1,12 @@
 #include <string.h>
 #include <assert.h>
+#include <stdlib.h>
 #include "patterns.h"
 #include "cilk/cilk.h"
 #include "cilk/cilk_api.h"
 #include "prefix_scan.h"
+
+#include <stdio.h>
 
 void map (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2)) {
 	assert (dest != NULL);
@@ -26,50 +29,71 @@ void map_seq (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)
 }
 
 void reduce (void *dest, void *src, size_t nJob,  size_t sizeJob,
-		void (*worker)(void *v1, const void *v2, const void *v3)
+		void (*worker)(void *v1, const void *v2, const void *v3))
 {
+	tilled_reduce(dest, src, nJob, sizeJob, worker, 3);
+	printf("Resultado tilled: \n");
+	printf("%lf\n", *((double*) dest));
+
+	reduce_seq(dest, src, nJob, sizeJob, worker);
+	printf("Resultado seq:\n");
+	printf("%lf\n", *((double*) dest));
 
 }
-void general_reduce (void *dest, void *src, size_t nJob,  size_t sizeJob,
-		void (*worker)(void *v1, const void *v2, const void *v3),  size_t splitFacor)
+void tilled_reduce (void *dest, void *src, size_t nJob,  size_t sizeJob,
+		void (*worker)(void *v1, const void *v2, const void *v3),  size_t tilleSize)
 {
 
 	assert (dest != NULL);
 	assert (src != NULL);
 	assert (worker != NULL);
 
-
-
-	if(splitFacor == 2)
+	if(tilleSize == 2)
 		reduce(dest, src, nJob, sizeJob, worker);
 	else{
 
+		size_t nThreads;
 		size_t currentSize = nJob;
-		void * aux = malloc(currentSize * sizeJob);
+		void * aux = malloc((nJob/tilleSize) * sizeJob);
 		void * read = src;
 		void * write = dest;
 
 		do{
-			size_t nThreads = nJob / splitFacor;
 
+			nThreads = currentSize / tilleSize;
+			if(nThreads == 0)
+				nThreads = 1;
 
+			printf("Print src: \n");
+				for(size_t k = 0; k < nJob; k++){
+					printf("%lf ", ((double*) src)[k]);
+				}
 
-			if(nThreads == 0){
-				for (int i = 1;  i < nJob;  i++)
-				   worker(write, write, read + i * sizeJob);
-			}else{
+			cilk_for(size_t currentThread = 0; currentThread < nThreads; currentThread++){
+				size_t lenght = tilleSize + ( currentThread < currentSize%tilleSize ? 1 : 0);
+				size_t offset = tilleSize * currentThread + (currentThread < currentSize % tilleSize ? currentThread : currentSize%tilleSize);
+				memcpy(write + currentThread*sizeJob, read + offset*sizeJob, sizeJob);
 
-				cilk_for(size_t currentThread = 0; currentThread < nThreads; j++){
-					size_t lenght = slipFactor + ( currenThread < nJob%splitFactor ? 1 : 0);
-					size_t offset = nJobs/nThreds + (currentThread < nJobs % nThreds ? currentThread : nJobs%Threds);
-					for (int i = 1;  i < lenght;  i++)
-						worker( write + currentThread*size, write + currentThread*size, read + (offset +i)*size)
-					}
+				for (int i = 1;  i < lenght;  i++){
+					size_t toPrint = offset +i;
+					printf("Offeset + i: %zu \n",toPrint);
+					worker( write + currentThread*sizeJob, write + currentThread*sizeJob, read + (offset +i)*sizeJob);
 
-				currentSize = nThreads;
-				read = read == dest ? aux : dest;
-				write = write == dest && currentSize > splitfactor ? aux : dest;
+				}
 			}
+
+			printf("\n");
+
+			printf("Print write: \n");
+			for(size_t y = 0; y < nThreads; y++){
+				printf("%lf ", ((double*) write)[y]);
+			}
+			printf("\n");
+
+
+			currentSize = nThreads;
+			read = read == dest ? aux : dest;
+			write = write == dest && currentSize > tilleSize ? aux : dest;
 
 		}while(nThreads > 1);
 
@@ -84,6 +108,7 @@ void reduce_seq (void *dest, void *src, size_t nJob, size_t sizeJob, void (*work
 	assert (dest != NULL);
 	assert (src != NULL);
 	assert (worker != NULL);
+
 	if (nJob > 1) {
 		memcpy (dest, src, sizeJob);
 		for (int i = 1;  i < nJob;  i++)
@@ -114,7 +139,7 @@ void scan_seq (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker
 int pack (void* dest, void* src, size_t nJob, size_t sizeJob, const int* filter)
 {
 
-
+return 1;
 }
 
 
