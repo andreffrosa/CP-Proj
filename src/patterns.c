@@ -48,13 +48,13 @@ void map_seq (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)
 void reduce (void *dest, void *src, size_t nJob,  size_t sizeJob,
 		void (*worker)(void *v1, const void *v2, const void *v3))
 {
-	tilled_reduce(dest, src, nJob, sizeJob, worker, 3);
-	printf("Resultado tilled: \n");
-	printf("%lf\n", *((double*) dest));
+//	tilled_reduce(dest, src, nJob, sizeJob, worker, 3);
+//	printf("Resultado tilled: \n");
+//	printf("%lf\n", *((double*) dest));
 
 	reduce_seq(dest, src, nJob, sizeJob, worker);
-	printf("Resultado seq:\n");
-	printf("%lf\n", *((double*) dest));
+//	printf("Resultado seq:\n");
+//	printf("%lf\n", *((double*) dest));
 
 }
 void tilled_reduce (void *dest, void *src, size_t nJob,  size_t sizeJob,
@@ -92,8 +92,8 @@ void tilled_reduce (void *dest, void *src, size_t nJob,  size_t sizeJob,
 				memcpy(write + currentThread*sizeJob, read + offset*sizeJob, sizeJob);
 
 				for (int i = 1;  i < lenght;  i++){
-					size_t toPrint = offset +i;
-					printf("Offeset + i: %zu \n",toPrint);
+//					size_t toPrint = offset +i;
+//					printf("Offeset + i: %zu \n",toPrint);
 					worker( write + currentThread*sizeJob, write + currentThread*sizeJob, read + (offset +i)*sizeJob);
 
 				}
@@ -152,11 +152,42 @@ void scan_seq (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker
 	}
 }
 
+
 int split(void* dest, void* src, size_t nJob, size_t sizeJob, const int* filter)
 {
+	assert (dest != NULL);
+	assert (src != NULL);
+	assert (filter != NULL);
 
-	return 1;
+	//inverting mask
+	int * invertedFilter = malloc( nJob * sizeof(int) );
+	cilk_for(size_t i = 0; i < nJob; i++){
+		invertedFilter[i] = 1 - filter[i];
+	}
 
+	//calculating positive and negative bitsums
+	int * negativesBitSum = malloc( nJob * sizeof(int) );
+	cilk_spawn scan( (void*) negativesBitSum, invertedFilter, nJob, sizeof(int) ,customWorkerAdd);
+
+	int * positivesBitSum = malloc( nJob * sizeof(int) );
+	scan( (void*) positivesBitSum, (void *) filter, nJob, sizeof(int), customWorkerAdd);
+
+	cilk_sync;
+
+	//packing values
+	size_t offset = positivesBitSum[nJob-1];
+
+
+	cilk_for(size_t i = 0; i < nJob; i++){
+		size_t pos =  filter[i] ? positivesBitSum[i] -1 : negativesBitSum[i]-1 + offset;
+		memcpy( dest + pos*sizeJob, src + i*sizeJob, sizeJob);
+	}
+
+	free(positivesBitSum);
+	free(negativesBitSum);
+	free(invertedFilter);
+
+	return offset;
 }
 
 
@@ -167,20 +198,6 @@ int pack (void* dest, void* src, size_t nJob, size_t sizeJob, const int* filter)
 	assert (dest != NULL);
 	assert (src != NULL);
 	assert (filter != NULL);
-
-
-	printf("Print src: \n");
-	for(size_t k = 0; k < nJob; k++){
-		printf("%lf ", ((double*) src)[k]);
-	}
-	printf("\n");
-
-	printf("Print filter: \n");
-	for(size_t y = 0; y < nJob; y++){
-		printf("%d ",  filter[y]);
-	}
-	printf("\n");
-
 
 	//allocating memory for bitsum
 	int *bitSum = malloc( nJob * sizeof(int) );
@@ -194,12 +211,6 @@ int pack (void* dest, void* src, size_t nJob, size_t sizeJob, const int* filter)
 			memcpy( dest + pos*sizeJob, src + i*sizeJob, sizeJob);
 		}
 	}
-
-	printf("Print dest: \n");
-	for(size_t k = 0; k < bitSum[nJob-1]; k++){
-		printf("%lf ", ((double*) dest)[k]);
-	}
-
 
 	int returnVal = bitSum[nJob-1]-1;
 	free(bitSum);
