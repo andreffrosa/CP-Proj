@@ -8,6 +8,23 @@
 
 #include <stdio.h>
 
+#define TYPE int
+#define FMT "%lf"
+#define SUM_NEUTRAL 0.0
+#define MULT_NEUTRAL 1.0
+
+
+//custom workers
+static void customWorkerAdd(void* a, const void* b, const void* c) {
+
+	TYPE res_b = b == NULL ? SUM_NEUTRAL : *(TYPE *)b;
+	TYPE res_c = c == NULL ? SUM_NEUTRAL : *(TYPE *)c;
+
+   // a = b + c
+    *(TYPE *)a = res_b + res_c;
+}
+
+
 void map (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2)) {
 	assert (dest != NULL);
 	assert (src != NULL);
@@ -64,11 +81,11 @@ void tilled_reduce (void *dest, void *src, size_t nJob,  size_t sizeJob,
 			if(nThreads == 0)
 				nThreads = 1;
 
-			printf("Print src: \n");
+			/*printf("Print src: \n");
 				for(size_t k = 0; k < nJob; k++){
 					printf("%lf ", ((double*) src)[k]);
 				}
-
+*/
 			cilk_for(size_t currentThread = 0; currentThread < nThreads; currentThread++){
 				size_t lenght = tilleSize + ( currentThread < currentSize%tilleSize ? 1 : 0);
 				size_t offset = tilleSize * currentThread + (currentThread < currentSize % tilleSize ? currentThread : currentSize%tilleSize);
@@ -81,7 +98,7 @@ void tilled_reduce (void *dest, void *src, size_t nJob,  size_t sizeJob,
 
 				}
 			}
-
+/*
 			printf("\n");
 
 			printf("Print write: \n");
@@ -90,7 +107,7 @@ void tilled_reduce (void *dest, void *src, size_t nJob,  size_t sizeJob,
 			}
 			printf("\n");
 
-
+*/
 			currentSize = nThreads;
 			read = read == dest ? aux : dest;
 			write = write == dest && currentSize > tilleSize ? aux : dest;
@@ -135,11 +152,59 @@ void scan_seq (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker
 	}
 }
 
+int split(void* dest, void* src, size_t nJob, size_t sizeJob, const int* filter)
+{
+
+	return 1;
+
+}
+
+
+
 
 int pack (void* dest, void* src, size_t nJob, size_t sizeJob, const int* filter)
 {
+	assert (dest != NULL);
+	assert (src != NULL);
+	assert (filter != NULL);
 
-return 1;
+
+	printf("Print src: \n");
+	for(size_t k = 0; k < nJob; k++){
+		printf("%lf ", ((double*) src)[k]);
+	}
+	printf("\n");
+
+	printf("Print filter: \n");
+	for(size_t y = 0; y < nJob; y++){
+		printf("%d ",  filter[y]);
+	}
+	printf("\n");
+
+
+	//allocating memory for bitsum
+	int *bitSum = malloc( nJob * sizeof(int) );
+
+	//calculate bitsum
+	scan( (void*) bitSum, (void *) filter, nJob, sizeof(int), customWorkerAdd);
+
+	cilk_for(size_t i = 0; i < nJob; i++){
+		if(filter[i]){
+			size_t pos = bitSum[i] -1;
+			memcpy( dest + pos*sizeJob, src + i*sizeJob, sizeJob);
+		}
+	}
+
+	printf("Print dest: \n");
+	for(size_t k = 0; k < bitSum[nJob-1]; k++){
+		printf("%lf ", ((double*) dest)[k]);
+	}
+
+
+	int returnVal = bitSum[nJob-1]-1;
+	free(bitSum);
+
+	return returnVal;
 }
 
 
@@ -331,3 +396,9 @@ void farm (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(vo
 void farm_seq (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2), size_t nWorkers) {
 	map (dest, src, nJob, sizeJob, worker);
 }
+
+
+
+
+
+
