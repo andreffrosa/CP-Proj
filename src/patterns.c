@@ -48,13 +48,13 @@ void map_seq (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)
 void reduce (void *dest, void *src, size_t nJob,  size_t sizeJob,
 		void (*worker)(void *v1, const void *v2, const void *v3))
 {
-//	tilled_reduce(dest, src, nJob, sizeJob, worker, 3);
-//	printf("Resultado tilled: \n");
-//	printf("%lf\n", *((double*) dest));
+	tilled_reduce(dest, src, nJob, sizeJob, worker, 3);
+	printf("Resultado tilled: \n");
+	printf("%lf\n", *((double*) dest));
 
 	reduce_seq(dest, src, nJob, sizeJob, worker);
-//	printf("Resultado seq:\n");
-//	printf("%lf\n", *((double*) dest));
+	printf("Resultado seq:\n");
+	printf("%lf\n", *((double*) dest));
 
 }
 void tilled_reduce (void *dest, void *src, size_t nJob,  size_t sizeJob,
@@ -71,9 +71,19 @@ void tilled_reduce (void *dest, void *src, size_t nJob,  size_t sizeJob,
 
 		size_t nThreads;
 		size_t currentSize = nJob;
-		void * aux = malloc((nJob/tilleSize) * sizeJob);
+		size_t aux1length = (nJob/tilleSize);
+		size_t aux2Length = aux1length / tilleSize;
+		void * aux = malloc(aux1length * sizeJob);
 		void * read = src;
-		void * write = dest;
+		void * write;
+
+		void * aux2 = NULL;
+		if( aux2Length > 1){
+			aux2= malloc( aux2Length * sizeJob );
+			write = aux2;
+		}else{
+			write = dest;
+		}
 
 		do{
 
@@ -81,40 +91,25 @@ void tilled_reduce (void *dest, void *src, size_t nJob,  size_t sizeJob,
 			if(nThreads == 0)
 				nThreads = 1;
 
-			/*printf("Print src: \n");
-				for(size_t k = 0; k < nJob; k++){
-					printf("%lf ", ((double*) src)[k]);
-				}
-*/
 			cilk_for(size_t currentThread = 0; currentThread < nThreads; currentThread++){
 				size_t lenght = tilleSize + ( currentThread < currentSize%tilleSize ? 1 : 0);
 				size_t offset = tilleSize * currentThread + (currentThread < currentSize % tilleSize ? currentThread : currentSize%tilleSize);
 				memcpy(write + currentThread*sizeJob, read + offset*sizeJob, sizeJob);
 
 				for (int i = 1;  i < lenght;  i++){
-//					size_t toPrint = offset +i;
-//					printf("Offeset + i: %zu \n",toPrint);
 					worker( write + currentThread*sizeJob, write + currentThread*sizeJob, read + (offset +i)*sizeJob);
 
 				}
 			}
-/*
-			printf("\n");
 
-			printf("Print write: \n");
-			for(size_t y = 0; y < nThreads; y++){
-				printf("%lf ", ((double*) write)[y]);
-			}
-			printf("\n");
-
-*/
 			currentSize = nThreads;
-			read = read == dest ? aux : dest;
-			write = write == dest && currentSize > tilleSize ? aux : dest;
+			read = read == aux2 ? aux : aux2;
+			write = currentSize < tilleSize ? dest : (write == aux ? aux2 : aux);
 
 		}while(nThreads > 1);
 
-		free(aux);
+		if(aux != NULL) free(aux);
+		if(aux2 != NULL) free(aux2);
 	}
 }
 
