@@ -79,11 +79,14 @@ void tilled_reduce (void *dest, void *src, size_t nJob,  size_t sizeJob,
 
 		void * aux2 = NULL;
 		if( aux2Length > 1){
+			printf("Vou dar malloc\n");
 			aux2= malloc( aux2Length * sizeJob );
 			write = aux2;
 		}else{
-			write = dest;
+			write = aux;
 		}
+
+		if(write == dest) printf("O Dest é write\n");
 
 		do{
 
@@ -91,20 +94,31 @@ void tilled_reduce (void *dest, void *src, size_t nJob,  size_t sizeJob,
 			if(nThreads == 0)
 				nThreads = 1;
 
-			cilk_for(size_t currentThread = 0; currentThread < nThreads; currentThread++){
-				size_t lenght = tilleSize + ( currentThread < currentSize%tilleSize ? 1 : 0);
-				size_t offset = tilleSize * currentThread + (currentThread < currentSize % tilleSize ? currentThread : currentSize%tilleSize);
-				memcpy(write + currentThread*sizeJob, read + offset*sizeJob, sizeJob);
+			printf("Num Threads: %zu\n", nThreads);
+			if(write == dest) printf("O dest é o write\n");
 
+			cilk_for(size_t currentThread = 0; currentThread < nThreads; currentThread++){
+				printf("Current Thread: %zu\n", currentThread);
+				size_t lenght = tilleSize + ( currentThread < currentSize%tilleSize ? 1 : 0);
+				printf("Size: %zu\n", lenght);
+				size_t offset = tilleSize * currentThread + (currentThread < currentSize % tilleSize ? currentThread : currentSize%tilleSize);
+				printf("Ofsset: %zu\n", offset);
+				memcpy(write + currentThread*sizeJob, read + offset*sizeJob, sizeJob);
+				printf("Passei O mem copy\n");
 				for (int i = 1;  i < lenght;  i++){
 					worker( write + currentThread*sizeJob, write + currentThread*sizeJob, read + (offset +i)*sizeJob);
 
 				}
 			}
 
+			printf("Resultado ate agora:\n");
+			for(size_t i = 0; i < nThreads; i++ ){
+				printf("%lf\n", ((double*) write)[i]);
+			}
+
 			currentSize = nThreads;
 			read = read == aux2 ? aux : aux2;
-			write = currentSize < tilleSize ? dest : (write == aux ? aux2 : aux);
+			write = currentSize <= tilleSize ? dest : (write == aux ? aux2 : aux);
 
 		}while(nThreads > 1);
 
