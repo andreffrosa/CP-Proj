@@ -78,7 +78,7 @@ void tiled_reduce (void *dest, void *src, size_t nJob,  size_t sizeJob,
 		tile_remainder = num_tiles % tileSize;	
 		num_tiles = num_tiles / tileSize;	// get the number of tiles 
 		
-		for(size_t curr_tile = 0; curr_tile < num_tiles; curr_tile++) {
+		cilk_for(size_t curr_tile = 0; curr_tile < num_tiles; curr_tile++) {
 			void *work_start = read + sizeJob * (curr_tile * tileSize + (curr_tile < tile_remainder ? curr_tile : tile_remainder));
 			size_t work_size = tileSize + (curr_tile < tile_remainder ? 1 : 0);
 			void *writeTo = write + curr_tile * sizeJob;
