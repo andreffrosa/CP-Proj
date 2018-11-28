@@ -161,6 +161,7 @@ int split(void* dest, void* src, size_t nJob, size_t sizeJob, const int* filter)
 	free(negativesBitSum);
 	free(invertedFilter);
 
+
 	return offset;
 }
 
