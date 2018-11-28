@@ -25,17 +25,14 @@ void reduce (
   void (*worker)(void *v1, const void *v2, const void *v3) // [ v1 = op (v2, v3) ]
 );
 
-
-void tilled_reduce (
+void tiled_reduce (
   void *dest,           // Target array
   void *src,            // Source array
   size_t nJob,          // # elements in the source array
   size_t sizeJob,       // Size of each element in the source array
   void (*worker)(void *v1, const void *v2, const void *v3), // [ v1 = op (v2, v3) ]
-  size_t tilleSize
+  size_t tileSize		// size (in sizeJob) of each tile to reduce
 );
-
-
 
 void reduce_seq (
   void *dest,           // Target array

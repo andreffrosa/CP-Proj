@@ -48,89 +48,55 @@ void map_seq (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)
 void reduce (void *dest, void *src, size_t nJob,  size_t sizeJob,
 		void (*worker)(void *v1, const void *v2, const void *v3))
 {
-	tilled_reduce(dest, src, nJob, sizeJob, worker, 3);
-	printf("Resultado tilled: \n");
+	tiled_reduce(dest, src, nJob, sizeJob, worker, 3);
+	/*printf("Resultado tilled: \n");
 	printf("%lf\n", *((double*) dest));
 
 	reduce_seq(dest, src, nJob, sizeJob, worker);
 	printf("Resultado seq:\n");
-	printf("%lf\n", *((double*) dest));
-
+	printf("%lf\n", *((double*) dest));*/
 }
-void tilled_reduce (void *dest, void *src, size_t nJob,  size_t sizeJob,
-		void (*worker)(void *v1, const void *v2, const void *v3),  size_t tilleSize)
-{
 
+void tiled_reduce (void *dest, void *src, size_t nJob,  size_t sizeJob,
+		void (*worker)(void *v1, const void *v2, const void *v3),  size_t tileSize)
+{
 	assert (dest != NULL);
 	assert (src != NULL);
 	assert (worker != NULL);
 
-	if(tilleSize == 2)
-		reduce(dest, src, nJob, sizeJob, worker);
-	else{
+	size_t num_tiles = nJob;
+	size_t tile_remainder;
+	
+	void *read = src;
 
-		size_t nThreads;
-		size_t currentSize = nJob;
-		size_t aux1length = (nJob/tilleSize);
-		size_t aux2Length = aux1length / tilleSize;
-		void * aux = malloc(aux1length * sizeJob);
-		void * read = src;
-		void * write;
-
-		void * aux2 = NULL;
-		if( aux2Length > 1){
-			printf("Vou dar malloc\n");
-			aux2= malloc( aux2Length * sizeJob );
-			write = aux2;
-		}else{
-			write = aux;
+	// the below memory zones only get allocated if tiled reduce is to actually occur; otherwise sequential reduce will take place and the memory would not be necessary
+	void *write = (num_tiles / tileSize) <= 1 ? NULL : malloc((num_tiles / tileSize) * sizeJob); // maximum size must be the number of tiles for the first reduce step
+	
+	void *aux = (num_tiles / tileSize) <= 1 ? NULL : malloc((num_tiles / tileSize / tileSize) * sizeJob); // maximum size must be the number of tiles for the second reduce step
+	
+	while(num_tiles / tileSize > 1) {	// while it is possible to have more than one tile of tileSize
+		tile_remainder = num_tiles % tileSize;	
+		num_tiles = num_tiles / tileSize;	// get the number of tiles 
+		
+		for(size_t curr_tile = 0; curr_tile < num_tiles; curr_tile++) {
+			void *work_start = read + sizeJob * (curr_tile * tileSize + (curr_tile < tile_remainder ? curr_tile : tile_remainder));
+			size_t work_size = tileSize + (curr_tile < tile_remainder ? 1 : 0);
+			void *writeTo = write + curr_tile * sizeJob;
+			reduce_seq(writeTo, work_start, work_size, sizeJob, worker);
 		}
-
-		if(write == dest) printf("O Dest é write\n");
-
-		do{
-
-			nThreads = currentSize / tilleSize;
-			if(nThreads == 0)
-				nThreads = 1;
-
-			printf("Num Threads: %zu\n", nThreads);
-			if(write == dest) printf("O dest é o write\n");
-
-			cilk_for(size_t currentThread = 0; currentThread < nThreads; currentThread++){
-				printf("Current Thread: %zu\n", currentThread);
-				size_t lenght = tilleSize + ( currentThread < currentSize%tilleSize ? 1 : 0);
-				printf("Size: %zu\n", lenght);
-				size_t offset = tilleSize * currentThread + (currentThread < currentSize % tilleSize ? currentThread : currentSize%tilleSize);
-				printf("Ofsset: %zu\n", offset);
-				memcpy(write + currentThread*sizeJob, read + offset*sizeJob, sizeJob);
-				printf("Passei O mem copy\n");
-				for (int i = 1;  i < lenght;  i++){
-					worker( write + currentThread*sizeJob, write + currentThread*sizeJob, read + (offset +i)*sizeJob);
-
-				}
-			}
-
-			printf("Resultado ate agora:\n");
-			for(size_t i = 0; i < nThreads; i++ ){
-				printf("%lf\n", ((double*) write)[i]);
-			}
-
-			currentSize = nThreads;
-			read = read == aux2 ? aux : aux2;
-			write = currentSize <= tilleSize ? dest : (write == aux ? aux2 : aux);
-
-		}while(nThreads > 1);
-
-		if(aux != NULL) free(aux);
-		if(aux2 != NULL) free(aux2);
+		
+		read = write;
+		write = aux;
+		aux = read;
 	}
+	
+	reduce_seq(dest, read, num_tiles, sizeJob, worker);
+	
+	free(aux);
+	free(write);
 }
 
-
-
 void reduce_seq (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2, const void *v3)) {
-	/* To be implemented */
 	assert (dest != NULL);
 	assert (src != NULL);
 	assert (worker != NULL);
@@ -160,7 +126,6 @@ void scan_seq (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker
 			worker(dest + i * sizeJob, src + i * sizeJob, dest + (i-1) * sizeJob);
 	}
 }
-
 
 int split(void* dest, void* src, size_t nJob, size_t sizeJob, const int* filter)
 {
@@ -199,9 +164,6 @@ int split(void* dest, void* src, size_t nJob, size_t sizeJob, const int* filter)
 	return offset;
 }
 
-
-
-
 int pack (void* dest, void* src, size_t nJob, size_t sizeJob, const int* filter)
 {
 	assert (dest != NULL);
@@ -226,7 +188,6 @@ int pack (void* dest, void* src, size_t nJob, size_t sizeJob, const int* filter)
 
 	return returnVal;
 }
-
 
 int pack_seq (void *dest, void *src, size_t nJob, size_t sizeJob, const int *filter) {
 	/* To be implemented */
