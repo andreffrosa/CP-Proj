@@ -1,6 +1,7 @@
 #include <string.h>
 #include <assert.h>
 #include "patterns.h"
+#include "prefix_scan.h"
 #include "cilk/cilk.h"
 #include "cilk/cilk_api.h"
 #include "prefix_sum.h"
@@ -44,10 +45,7 @@ void scan(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(voi
 	assert (src != NULL);
 	assert (worker != NULL);
 	
-	// TODO resolve neutral element; wait for prof message
-	double neutral_element = 0;
-	
-	prefix_sum(src, dest, nJob, sizeJob, worker, (void *) &neutral_element);
+	prefix_scan(src, dest, nJob, sizeJob, worker);
 }
 
 void scan_seq (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2, const void *v3)) {
@@ -62,7 +60,6 @@ void scan_seq (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker
 }
 
 int pack (void *dest, void *src, size_t nJob, size_t sizeJob, const int *filter) {
-	/* To be implemented */
 	int pos = 0;
 	for (int i=0; i < nJob; i++) {
 		if (filter[i]) {
