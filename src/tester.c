@@ -15,7 +15,9 @@
 
 typedef enum MODE_ {
 	SEQ=0,
-	PAR=1
+	PAR=1,
+	ALT=2,
+	MODES=3
 } MODE;
 
 void runTester(double*** result, size_t runs, size_t start, size_t max_size, size_t step);
@@ -24,41 +26,41 @@ void freeResultsMatrix(double*** results, size_t sizes, size_t functions);
 int *createRandomBinaryFilter(size_t size);
 
 static void workerAdd(void* a, const void* b, const void* c) {
-    // a = b + c	
+	// a = b + c
 	TYPE res_b = b == NULL ? 0.0 : *(TYPE *)b;
 	TYPE res_c = c == NULL ? 0.0 : *(TYPE *)c;
-	
-    *(TYPE *)a = res_b + res_c;
+
+	*(TYPE *)a = res_b + res_c;
 }
 
 static void workerAddOne(void* a, const void* b) {
-    // a = b + 1
-    *(TYPE *)a = *(TYPE *)b + 1;
+	// a = b + 1
+	*(TYPE *)a = *(TYPE *)b + 1;
 }
 static void workerMultTwo(void* a, const void* b) {
-    // a = b * 2
-    *(TYPE *)a = *(TYPE *)b * 2;
+	// a = b * 2
+	*(TYPE *)a = *(TYPE *)b * 2;
 }
 
 static void workerDivTwo(void* a, const void* b) {
-    // a = b / 2
-    *(TYPE *)a = *(TYPE *)b / 2;
+	// a = b / 2
+	*(TYPE *)a = *(TYPE *)b / 2;
 }
 
 /*static void workerHeavy(void* a, const void* b) {
     // a = b / 2
 
     for(int i = 0; i < 10; i++ ) {
-    	*(TYPE *)a = *(TYPE *)b / 2;
-    	*(TYPE *)a = *(TYPE *)b * 2;
-    	*(TYPE *)a = *(TYPE *)b + 1;
+ *(TYPE *)a = *(TYPE *)b / 2;
+ *(TYPE *)a = *(TYPE *)b * 2;
+ *(TYPE *)a = *(TYPE *)b + 1;
     }
 }*/
 
 static void workerSleep(void* a, const void* b) {
-    // a = b / 2
+	// a = b / 2
 
-    usleep(150);
+	usleep(150);
 }
 
 //https://www.gnu.org/software/libc/manual/html_node/CPU-Time.html para colocar na bibliografia
@@ -71,10 +73,12 @@ unsigned long evalMap(void* src, void* dest, size_t nJob, size_t size, MODE mode
 		start = clock();
 		map_seq (dest, src, nJob, size, workerSleep);
 		end = clock();
-	} else {
+	} else if (mode == PAR) {
 		start = clock();
 		map (dest, src, nJob, size, workerSleep);
 		end = clock();
+	} else {
+		return -1;
 	}
 
 	us_cpu_time_used = (unsigned long)((((double) (end - start)) / (CLOCKS_PER_SEC/ (1000*1000))) ); // in microseconds
@@ -90,10 +94,12 @@ unsigned long evalScan(void* src, void* dest, size_t nJob, size_t size, MODE mod
 		start = clock();
 		scan_seq (dest, src, nJob, size, workerAdd);
 		end = clock();
-	} else {
+	} else if (mode == PAR) {
 		start = clock();
 		scan (dest, src, nJob, size, workerAdd);
 		end = clock();
+	} else {
+		return -1;
 	}
 
 	us_cpu_time_used = (unsigned long)((((double) (end - start)) / (CLOCKS_PER_SEC/ (1000*1000))) ); // in microseconds
@@ -104,7 +110,7 @@ unsigned long evalScan(void* src, void* dest, size_t nJob, size_t size, MODE mod
 unsigned long evalGather(void* src, void* dest, size_t nJob, size_t size, MODE mode) {
 	int filterSize = nJob;	//using a filter the size of input for now
 	int *filter = createRandomBinaryFilter(filterSize);
-	
+
 	clock_t start, end;
 	unsigned long us_cpu_time_used;
 
@@ -112,23 +118,25 @@ unsigned long evalGather(void* src, void* dest, size_t nJob, size_t size, MODE m
 		start = clock();
 		gather_seq (dest, src, nJob, size, filter, filterSize);
 		end = clock();
-	} else {
+	} else if (mode == PAR) {
 		start = clock();
 		gather (dest, src, nJob, size, filter, filterSize);
 		end = clock();
+	} else {
+		return -1;
 	}
 
 	us_cpu_time_used = (unsigned long)((((double) (end - start)) / (CLOCKS_PER_SEC/ (1000*1000))) ); // in microseconds
-	
+
 	free(filter);
-	
+
 	return us_cpu_time_used;
 }
 
 unsigned long evalScatter(void* src, void* dest, size_t nJob, size_t size, MODE mode) {
 	int filterSize = nJob;
 	int *filter = createRandomBinaryFilter(filterSize);
-	
+
 	clock_t start, end;
 	unsigned long us_cpu_time_used;
 
@@ -136,87 +144,106 @@ unsigned long evalScatter(void* src, void* dest, size_t nJob, size_t size, MODE 
 		start = clock();
 		scatter_seq (dest, src, nJob, size, filter);
 		end = clock();
-	} else {
+	} else if (mode == PAR) {
 		start = clock();
 		scatter (dest, src, nJob, size, filter);
 		end = clock();
+	} else {
+		return -1;
 	}
 
 	us_cpu_time_used = (unsigned long)((((double) (end - start)) / (CLOCKS_PER_SEC/ (1000*1000))) ); // in microseconds
-	
+
 	free(filter);
-	
+
 	return us_cpu_time_used;
 }
 
 unsigned long evalPipeline (void* src, void* dest, size_t nJob, size_t size, MODE mode) {
-    void (*pipelineFunction[])(void*, const void*) = {
-        workerMultTwo,
-        workerAddOne,
-        workerDivTwo
-    };
-    int nPipelineFunction = sizeof (pipelineFunction)/sizeof(pipelineFunction[0]);
+	void (*pipelineFunction[])(void*, const void*) = {
+			workerMultTwo,
+			workerAddOne,
+			workerDivTwo
+	};
+	int nPipelineFunction = sizeof (pipelineFunction)/sizeof(pipelineFunction[0]);
 
-    clock_t start, end;
-    	unsigned long us_cpu_time_used;
+	clock_t start, end;
+	unsigned long us_cpu_time_used;
 
-    	if( mode == SEQ) {
-    		start = clock();
-    	    pipeline_seq (dest, src, nJob, size, pipelineFunction, nPipelineFunction);
-    		end = clock();
-    	} else {
-    		start = clock();
-    	    pipeline (dest, src, nJob, size, pipelineFunction, nPipelineFunction);
-    		end = clock();
-    	}
+	if( mode == SEQ) {
+		start = clock();
+		pipeline_seq (dest, src, nJob, size, pipelineFunction, nPipelineFunction);
+		end = clock();
+	} else if (mode == PAR) {
+		start = clock();
+		pipeline (dest, src, nJob, size, pipelineFunction, nPipelineFunction);
+		end = clock();
+	} else if (mode == ALT) {
+		start = clock();
+		pipeline_farm (dest, src, nJob, size, pipelineFunction, nPipelineFunction, 8);
+		end = clock();
+	}
 
-    	us_cpu_time_used = (unsigned long)((((double) (end - start)) / (CLOCKS_PER_SEC/ (1000*1000))) ); // in microseconds
+	us_cpu_time_used = (unsigned long)((((double) (end - start)) / (CLOCKS_PER_SEC/ (1000*1000))) ); // in microseconds
 
-    	return us_cpu_time_used;
+	return us_cpu_time_used;
 }
 
 unsigned long evalFarm (void* src, void* dest, size_t nJob, size_t size, MODE mode) {
-    clock_t start, end;
-    	unsigned long us_cpu_time_used;
+	clock_t start, end;
+	unsigned long us_cpu_time_used;
 
-    	if( mode == SEQ) {
-    		start = clock();
-    		farm_seq (dest, src, nJob, size, workerAddOne, 3);
-    		end = clock();
-    	} else {
-    		start = clock();
-    		farm (dest, src, nJob, size, workerAddOne, 3);
-    		end = clock();
-    	}
+	if( mode == SEQ) {
+		start = clock();
+		farm_seq (dest, src, nJob, size, workerAddOne, 3);
+		end = clock();
+	} else if (mode == PAR) {
+		start = clock();
+		farm (dest, src, nJob, size, workerAddOne, 3);
+		end = clock();
+	} else {
+		return -1;
+	}
 
-    	us_cpu_time_used = (unsigned long)((((double) (end - start)) / (CLOCKS_PER_SEC/ (1000*1000))) ); // in microseconds
+	us_cpu_time_used = (unsigned long)((((double) (end - start)) / (CLOCKS_PER_SEC/ (1000*1000))) ); // in microseconds
 
-    	return us_cpu_time_used;
+	return us_cpu_time_used;
 }
 
 typedef unsigned long (*EVALFUNCTION)(void *, void*, size_t, size_t, MODE);
 
 EVALFUNCTION evalFunction[] = {
-    evalMap,
-    //testReduce,
-    evalScan,
-    //testPack,
-    evalGather,
-    evalScatter,
-    evalPipeline,
-    evalFarm
+		evalMap,
+		//testReduce,
+		evalScan,
+		//testPack,
+		evalGather,
+		evalScatter,
+		evalPipeline,
+		evalFarm
 };
 
 
 char *evalNames[] = {
-    "Map",
-    //"testReduce",
-    "Scan",
-    //"testPack",
-    "Gather",
-    "Scatter",
-    "Pipeline",
-    "Farm"
+		"Map",
+		//"testReduce",
+		"Scan",
+		//"testPack",
+		"Gather",
+		"Scatter",
+		"Pipeline",
+		"Farm"
+};
+
+char *altNames[] = {
+		"",
+		//"testReduce",
+		"",
+		//"testPack",
+		"",
+		"",
+		"PipelineFarm",
+		""
 };
 
 int nEvalFunctions = sizeof (evalFunction)/sizeof(evalFunction[0]);
@@ -261,10 +288,16 @@ void saveResults(double*** results, size_t y_base, size_t step, size_t start, si
 
 		fp = fopen (fileName, "w");
 
-		fprintf (fp, ";%s;%s\n", "sequential", "parallel");
+		if(results[0][pattern][ALT] > 0)
+			fprintf (fp, ";%s;%s;%s\n", "sequential", "parallel", altNames[pattern]);
+		else
+			fprintf (fp, ";%s;%s\n", "sequential", "parallel");
 
 		for( size_t i = 0; i < n_steps; i++) {
-			fprintf (fp, "%lu;%f;%f\n", start+i*step, results[i][pattern][SEQ], results[i][pattern][PAR]);
+			if(results[i][pattern][ALT] > 0)
+				fprintf (fp, "%lu;%f;%f;%f\n", start+i*step, results[i][pattern][SEQ], results[i][pattern][PAR], results[i][pattern][ALT]);
+			else
+				fprintf (fp, "%lu;%f;%f\n", start+i*step, results[i][pattern][SEQ], results[i][pattern][PAR]);
 		}
 
 		fclose (fp);
@@ -316,11 +349,11 @@ TYPE* createRandomArray(size_t n) {
 
 int *createRandomBinaryFilter(size_t size) {
 	int *filter = malloc(sizeof(int) * size);
-	
+
 	for(int i = 0; i < size; i++) {
 		filter[i] = rand() % 2;
 	}
-	
+
 	return filter;
 }
 
@@ -330,8 +363,8 @@ double*** createResultsMatrix(size_t n_steps, size_t functions) {
 	for(size_t i = 0; i < n_steps; i++){
 		results[i] = malloc( functions*sizeof(double*) );
 		for(size_t j = 0; j < functions; j++) {
-			results[i][j] = malloc(2*sizeof(double));
-			bzero(results[i][j], 2*sizeof(double));
+			results[i][j] = malloc(MODES*sizeof(double));
+			bzero(results[i][j], MODES*sizeof(double));
 		}
 	}
 	return results;
@@ -372,6 +405,12 @@ void runTester(double*** results, size_t runs, size_t start, size_t n_steps, siz
 				// printf("sequential_%s %lu microseconds\n", evalNames[f], t);
 
 				results[i][f][SEQ] += t;
+
+				// Alternative
+				t = evalFunction[f](src, dest, current_size, sizeof(TYPE), ALT);
+				// printf("sequential_%s %lu microseconds\n", evalNames[f], t);
+
+				results[i][f][ALT] += t;
 			}
 		}
 		free(src);
@@ -383,13 +422,17 @@ void runTester(double*** results, size_t runs, size_t start, size_t n_steps, siz
 		for(size_t i = 0; i < n_steps; i++) {
 			size_t current_size = i*step + start;
 			printf("array size=%lu \t runs=%lu\n", current_size, runs );
-			printf("Pattern \t\t\t Sequential 	\t Parallel\n");
+			printf("Pattern \t\t\t Sequential 	\t Parallel \t Parallel2\n");
 			for(size_t j = 0; j < nEvalFunctions; j++){
 				for(size_t k = 0; k < 2; k++){
 					results[i][j][k] = results[i][j][k] / runs;
 				}
 
-				printf("%s \t\t\t %f us \t %f us \n", evalNames[j], results[i][j][SEQ], results[i][j][PAR]);
+				printf("%s \t\t\t %f us \t %f us", evalNames[j], results[i][j][SEQ], results[i][j][PAR]);
+				if( results[i][j][PAR] > 0 ) {
+					printf( "\t %f us", results[i][j][PAR]);
+				}
+				printf("\n");
 			}
 			printf("\n");
 		}
