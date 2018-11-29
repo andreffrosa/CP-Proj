@@ -48,13 +48,38 @@ void map_seq (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)
 void reduce (void *dest, void *src, size_t nJob,  size_t sizeJob,
 		void (*worker)(void *v1, const void *v2, const void *v3))
 {
-	tiled_reduce(dest, src, nJob, sizeJob, worker, 3);
-	/*printf("Resultado tilled: \n");
-	printf("%lf\n", *((double*) dest));
-
-	reduce_seq(dest, src, nJob, sizeJob, worker);
-	printf("Resultado seq:\n");
-	printf("%lf\n", *((double*) dest));*/
+	assert (dest != NULL);
+	assert (src != NULL);
+	assert (worker != NULL);
+	
+	size_t num_tiles = nJob;
+	size_t tile_remainder;
+	
+	void *read = src;
+	void *write = malloc((num_tiles / 2) * sizeJob);
+	
+	void *aux = malloc((num_tiles / 4) * sizeJob);
+	
+	while(num_tiles > 1) {
+		tile_remainder = num_tiles % 2;	
+		num_tiles = num_tiles / 2;
+		
+		cilk_for(size_t curr_tile = 0; curr_tile < num_tiles; curr_tile ++)
+			worker(write + curr_tile * sizeJob, read + (2 * curr_tile) * sizeJob, read + (2 * curr_tile + 1) * sizeJob);
+			
+		if(tile_remainder == 1)
+			worker(write, write, read + num_tiles * 2 * sizeJob);
+		
+		read = write;
+		write = aux;
+		aux = read;
+	}
+	
+	if(num_tiles != nJob) 
+		memcpy(dest, read, sizeJob);
+	
+	free(aux);
+	free(write);
 }
 
 void tiled_reduce (void *dest, void *src, size_t nJob,  size_t sizeJob,

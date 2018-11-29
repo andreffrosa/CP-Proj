@@ -84,8 +84,6 @@ int pack_seq(
 	const int *filter     // Filer for pack
 );
 
-
-
 void gather (
   void *dest,           // Target array
   void *src,            // Source array

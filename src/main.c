@@ -50,8 +50,8 @@ int main(int argc, char* argv[]) {
     printf ("Initializing SRC array\n");
     TYPE *src = malloc (sizeof(*src) * N);
     for (i = 0; i < N; i++)
-        //src[i] = drand48();
-		src[i] = i + 1;
+        src[i] = drand48();
+		// src[i] = i + 1;
     printf ("Done!\n");
     
     printDouble (src, N, "SRC");
