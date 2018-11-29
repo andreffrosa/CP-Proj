@@ -190,8 +190,43 @@ int split(void* dest, void* src, size_t nJob, size_t sizeJob, const int* filter)
 	return offset;
 }
 
-int pack (void* dest, void* src, size_t nJob, size_t sizeJob, const int* filter)
+int split_seq(void* dest, void* src, size_t nJob, size_t sizeJob, const int* filter)
 {
+	assert (dest != NULL);
+	assert (src != NULL);
+	assert (filter != NULL);
+
+	//inverting mask
+	int * invertedFilter = malloc( nJob * sizeof(int) );
+	for(size_t i = 0; i < nJob; i++){
+		invertedFilter[i] = 1 - filter[i];
+	}
+
+	//calculating positive and negative bitsums
+	int * negativesBitSum = malloc( nJob * sizeof(int) );
+	scan( (void*) negativesBitSum, invertedFilter, nJob, sizeof(int) ,customWorkerAdd);
+
+	int * positivesBitSum = malloc( nJob * sizeof(int) );
+	scan( (void*) positivesBitSum, (void *) filter, nJob, sizeof(int), customWorkerAdd);
+
+	//packing values
+	size_t offset = positivesBitSum[nJob-1];
+
+	for(size_t i = 0; i < nJob; i++){
+		size_t pos =  filter[i] ? positivesBitSum[i] -1 : negativesBitSum[i]-1 + offset;
+		memcpy( dest + pos*sizeJob, src + i*sizeJob, sizeJob);
+	}
+
+	free(positivesBitSum);
+	free(negativesBitSum);
+	free(invertedFilter);
+
+
+	return offset;
+}
+
+int pack (void* dest, void* src, size_t nJob, size_t sizeJob, const int* filter)
+{	
 	assert (dest != NULL);
 	assert (src != NULL);
 	assert (filter != NULL);
@@ -209,7 +244,7 @@ int pack (void* dest, void* src, size_t nJob, size_t sizeJob, const int* filter)
 		}
 	}
 
-	int returnVal = bitSum[nJob-1]-1;
+	int returnVal = bitSum[nJob-1];
 	free(bitSum);
 
 	return returnVal;

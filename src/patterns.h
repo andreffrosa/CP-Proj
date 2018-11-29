@@ -63,25 +63,31 @@ int split(
   void* src,            // Source array
   size_t nJob,			// # elements in the source array
   size_t sizeJob,       // Size of each element in the source array
-  const int* filter		// Filer for pack
+  const int* filter		// Filter for pack
  );
-
+ 
+int split_seq(
+  void* dest,           // Target array
+  void* src,            // Source array
+  size_t nJob,			// # elements in the source array
+  size_t sizeJob,       // Size of each element in the source array
+  const int* filter		// Filter for pack
+ );
 
 int pack (
   void *dest,           // Target array
   void *src,            // Source array
   size_t nJob,          // # elements in the source array
   size_t sizeJob,       // Size of each element in the source array
-  const int *filter     // Filer for pack
+  const int *filter     // Filter for pack
 );
-
 
 int pack_seq(
 	void *dest,           // Target array
 	void *src,            // Source array
 	size_t nJob,          // # elements in the source array
 	size_t sizeJob,       // Size of each element in the source array
-	const int *filter     // Filer for pack
+	const int *filter     // Filter for pack
 );
 
 void gather (
