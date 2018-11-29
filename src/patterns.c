@@ -1,5 +1,6 @@
 #include <string.h>
 #include <assert.h>
+#include <stdlib.h>
 #include "patterns.h"
 #include "prefix_scan.h"
 #include "cilk/cilk.h"
@@ -7,6 +8,22 @@
 #include "prefix_sum.h"
 
 #include <stdio.h>
+
+#define TYPE int
+#define FMT "%lf"
+#define SUM_NEUTRAL 0.0
+#define MULT_NEUTRAL 1.0
+
+
+//custom workers
+static void customWorkerAdd(void* a, const void* b, const void* c) {
+
+	TYPE res_b = b == NULL ? SUM_NEUTRAL : *(TYPE *)b;
+	TYPE res_c = c == NULL ? SUM_NEUTRAL : *(TYPE *)c;
+
+   // a = b + c
+    *(TYPE *)a = res_b + res_c;
+}
 
 void map (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2)) {
 	assert (dest != NULL);
@@ -28,11 +45,87 @@ void map_seq (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)
 	}
 }
 
-void reduce (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2, const void *v3)) {
-	/* To be implemented */
+void reduce (void *dest, void *src, size_t nJob,  size_t sizeJob,
+		void (*worker)(void *v1, const void *v2, const void *v3))
+{
 	assert (dest != NULL);
 	assert (src != NULL);
 	assert (worker != NULL);
+	
+	size_t num_tiles = nJob;
+	size_t tile_remainder;
+	
+	void *read = src;
+	void *write = malloc((num_tiles / 2) * sizeJob);
+	
+	void *aux = malloc((num_tiles / 4) * sizeJob);
+	
+	while(num_tiles > 1) {
+		tile_remainder = num_tiles % 2;	
+		num_tiles = num_tiles / 2;
+		
+		cilk_for(size_t curr_tile = 0; curr_tile < num_tiles; curr_tile ++)
+			worker(write + curr_tile * sizeJob, read + (2 * curr_tile) * sizeJob, read + (2 * curr_tile + 1) * sizeJob);
+			
+		if(tile_remainder == 1)
+			worker(write, write, read + num_tiles * 2 * sizeJob);
+		
+		read = write;
+		write = aux;
+		aux = read;
+	}
+	
+	if(num_tiles != nJob) 
+		memcpy(dest, read, sizeJob);
+	
+	free(aux);
+	free(write);
+}
+
+void tiled_reduce (void *dest, void *src, size_t nJob,  size_t sizeJob,
+		void (*worker)(void *v1, const void *v2, const void *v3),  size_t tileSize)
+{
+	assert (dest != NULL);
+	assert (src != NULL);
+	assert (worker != NULL);
+
+	size_t num_tiles = nJob;
+	size_t tile_remainder;
+	
+	void *read = src;
+
+	// the below memory zones only get allocated if tiled reduce is to actually occur; otherwise sequential reduce will take place and the memory would not be necessary
+	void *write = (num_tiles / tileSize) <= 1 ? NULL : malloc((num_tiles / tileSize) * sizeJob); // maximum size must be the number of tiles for the first reduce step
+	
+	void *aux = (num_tiles / tileSize) <= 1 ? NULL : malloc((num_tiles / tileSize / tileSize) * sizeJob); // maximum size must be the number of tiles for the second reduce step
+	
+	while(num_tiles / tileSize > 1) {	// while it is possible to have more than one tile of tileSize
+		tile_remainder = num_tiles % tileSize;	
+		num_tiles = num_tiles / tileSize;	// get the number of tiles 
+		
+		cilk_for(size_t curr_tile = 0; curr_tile < num_tiles; curr_tile++) {
+			void *work_start = read + sizeJob * (curr_tile * tileSize + (curr_tile < tile_remainder ? curr_tile : tile_remainder));
+			size_t work_size = tileSize + (curr_tile < tile_remainder ? 1 : 0);
+			void *writeTo = write + curr_tile * sizeJob;
+			reduce_seq(writeTo, work_start, work_size, sizeJob, worker);
+		}
+		
+		read = write;
+		write = aux;
+		aux = read;
+	}
+	
+	reduce_seq(dest, read, num_tiles, sizeJob, worker);
+	
+	free(aux);
+	free(write);
+}
+
+void reduce_seq (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2, const void *v3)) {
+	assert (dest != NULL);
+	assert (src != NULL);
+	assert (worker != NULL);
+
 	if (nJob > 1) {
 		memcpy (dest, src, sizeJob);
 		for (int i = 1;  i < nJob;  i++)
@@ -59,7 +152,106 @@ void scan_seq (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker
 	}
 }
 
-int pack (void *dest, void *src, size_t nJob, size_t sizeJob, const int *filter) {
+int split(void* dest, void* src, size_t nJob, size_t sizeJob, const int* filter)
+{
+	assert (dest != NULL);
+	assert (src != NULL);
+	assert (filter != NULL);
+
+	//inverting mask
+	int * invertedFilter = malloc( nJob * sizeof(int) );
+	cilk_for(size_t i = 0; i < nJob; i++){
+		invertedFilter[i] = 1 - filter[i];
+	}
+
+	//calculating positive and negative bitsums
+	int * negativesBitSum = malloc( nJob * sizeof(int) );
+	cilk_spawn scan( (void*) negativesBitSum, invertedFilter, nJob, sizeof(int) ,customWorkerAdd);
+
+	int * positivesBitSum = malloc( nJob * sizeof(int) );
+	scan( (void*) positivesBitSum, (void *) filter, nJob, sizeof(int), customWorkerAdd);
+
+	cilk_sync;
+
+	//packing values
+	size_t offset = positivesBitSum[nJob-1];
+
+
+	cilk_for(size_t i = 0; i < nJob; i++){
+		size_t pos =  filter[i] ? positivesBitSum[i] -1 : negativesBitSum[i]-1 + offset;
+		memcpy( dest + pos*sizeJob, src + i*sizeJob, sizeJob);
+	}
+
+	free(positivesBitSum);
+	free(negativesBitSum);
+	free(invertedFilter);
+
+
+	return offset;
+}
+
+int split_seq(void* dest, void* src, size_t nJob, size_t sizeJob, const int* filter)
+{
+	assert (dest != NULL);
+	assert (src != NULL);
+	assert (filter != NULL);
+
+	//inverting mask
+	int * invertedFilter = malloc( nJob * sizeof(int) );
+	for(size_t i = 0; i < nJob; i++){
+		invertedFilter[i] = 1 - filter[i];
+	}
+
+	//calculating positive and negative bitsums
+	int * negativesBitSum = malloc( nJob * sizeof(int) );
+	scan( (void*) negativesBitSum, invertedFilter, nJob, sizeof(int) ,customWorkerAdd);
+
+	int * positivesBitSum = malloc( nJob * sizeof(int) );
+	scan( (void*) positivesBitSum, (void *) filter, nJob, sizeof(int), customWorkerAdd);
+
+	//packing values
+	size_t offset = positivesBitSum[nJob-1];
+
+	for(size_t i = 0; i < nJob; i++){
+		size_t pos =  filter[i] ? positivesBitSum[i] -1 : negativesBitSum[i]-1 + offset;
+		memcpy( dest + pos*sizeJob, src + i*sizeJob, sizeJob);
+	}
+
+	free(positivesBitSum);
+	free(negativesBitSum);
+	free(invertedFilter);
+
+
+	return offset;
+}
+
+int pack (void* dest, void* src, size_t nJob, size_t sizeJob, const int* filter)
+{	
+	assert (dest != NULL);
+	assert (src != NULL);
+	assert (filter != NULL);
+
+	//allocating memory for bitsum
+	int *bitSum = malloc( nJob * sizeof(int) );
+
+	//calculate bitsum
+	scan( (void*) bitSum, (void *) filter, nJob, sizeof(int), customWorkerAdd);
+
+	cilk_for(size_t i = 0; i < nJob; i++){
+		if(filter[i]){
+			size_t pos = bitSum[i] -1;
+			memcpy( dest + pos*sizeJob, src + i*sizeJob, sizeJob);
+		}
+	}
+
+	int returnVal = bitSum[nJob-1];
+	free(bitSum);
+
+	return returnVal;
+}
+
+int pack_seq (void *dest, void *src, size_t nJob, size_t sizeJob, const int *filter) {
+	/* To be implemented */
 	int pos = 0;
 	for (int i=0; i < nJob; i++) {
 		if (filter[i]) {

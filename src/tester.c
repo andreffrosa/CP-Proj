@@ -86,6 +86,27 @@ unsigned long evalMap(void* src, void* dest, size_t nJob, size_t size, MODE mode
 	return us_cpu_time_used;
 }
 
+unsigned long evalReduce(void* src, void* dest, size_t nJob, size_t size, MODE mode) {
+	clock_t start, end;
+	unsigned long us_cpu_time_used;
+
+	if( mode == SEQ) {
+		start = clock();
+		reduce_seq (dest, src, nJob, size, workerAdd);
+		end = clock();
+	} else if (mode == PAR) {
+		start = clock();
+		reduce (dest, src, nJob, size, workerAdd);
+		end = clock();
+	} else {
+		return -1;
+	}
+
+	us_cpu_time_used = (unsigned long)((((double) (end - start)) / (CLOCKS_PER_SEC/ (1000*1000))) ); // in microseconds
+
+	return us_cpu_time_used;
+}
+
 unsigned long evalScan(void* src, void* dest, size_t nJob, size_t size, MODE mode) {
 	clock_t start, end;
 	unsigned long us_cpu_time_used;
@@ -214,7 +235,7 @@ typedef unsigned long (*EVALFUNCTION)(void *, void*, size_t, size_t, MODE);
 
 EVALFUNCTION evalFunction[] = {
 		evalMap,
-		//testReduce,
+		evalReduce,
 		evalScan,
 		//testPack,
 		evalGather,
@@ -226,7 +247,7 @@ EVALFUNCTION evalFunction[] = {
 
 char *evalNames[] = {
 		"Map",
-		//"testReduce",
+		"Reduce",
 		"Scan",
 		//"testPack",
 		"Gather",
