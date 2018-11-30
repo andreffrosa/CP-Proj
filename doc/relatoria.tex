@@ -129,7 +129,7 @@
 % *** GRAPHICS RELATED PACKAGES ***
 %
 \ifCLASSINFOpdf
-  % \usepackage[pdftex]{graphicx}
+  \usepackage[pdftex]{graphicx}
   % declare the path(s) where your graphic files are
   % \graphicspath{{../pdf/}{../jpeg/}}
   % and their extensions so you won't have to specify these with
@@ -210,7 +210,7 @@
 
 % *** ALIGNMENT PACKAGES ***
 %
-%\usepackage{array}
+\usepackage{array}
 % Frank Mittelbach's and David Carlisle's array.sty patches and improves
 % the standard LaTeX2e array and tabular environments to provide better
 % appearance and additional user controls. As the default LaTeX2e table
@@ -321,6 +321,8 @@
 % to submit to, of course. )
 
 
+\usepackage[utf8]{inputenc}
+
 % correct bad hyphenation here
 \hyphenation{op-tical net-works semi-conduc-tor}
 
@@ -333,29 +335,33 @@
 % not capitalized unless they are the first or last word of the title.
 % Linebreaks \\ can be used within to get better formatting as desired.
 % Do not put math or special symbols in the title.
-\title{Concurrency and Paralellism\\ Project Report}
+\title{Concurrency and Parallelism\\ Cilk$^+$ Parallel Patterns Implementation }
 
+%\institute{DI - FCT - NOVA University of Lisbon}
 
 % author names and affiliations
 % use a multiple column layout for up to three different
 % affiliations
-\author{\IEEEauthorblockN{Rúben Silva}
-\IEEEauthorblockA{Computer Science Department\\
-FCT-UNL\\
-Almada, Setúbal\\
-Email: af.rosa@campus.fct.unl.pt}
+\author{\IEEEauthorblockN{André Rosa}
+\IEEEauthorblockA{%Computer Science Department\\
+%FCT-UNL\\
+%Almada, Setúbal\\
+48043\\
+af.rosa@campus.fct.unl.pt}
 \and
 \IEEEauthorblockN{João Geraldo}
-\IEEEauthorblockA{Computer Science Department\\
-FCT-UNL\\
-Almada, Setúbal\\
-Email: j.geraldo@campus.fct.unl.pt}
+\IEEEauthorblockA{%Computer Science Department\\
+%FCT-UNL\\
+%Almada, Setúbal\\
+49543\\
+j.geraldo@campus.fct.unl.pt}
 \and
 \IEEEauthorblockN{Rúben Silva}
-\IEEEauthorblockA{Computer Science Department\\
-FCT-UNL\\
-Almada, Setúbal\\
-Email: rfc.silva@campus.fct.unl.pt}}
+\IEEEauthorblockA{%Computer Science Department\\
+%FCT-UNL\\
+%Almada, Setúbal\\
+47134\\
+rfc.silva@campus.fct.unl.pt}}
 
 % conference papers do not typically use \thanks and this command
 % is locked out in conference mode. If really needed, such as for
