@@ -22,5 +22,9 @@ debug.o: debug.c debug.h
 main.o: main.c unit.h debug.h
 patterns.o: patterns.c patterns.h prefix_scan.h
 unit.o: unit.c patterns.h debug.h unit.h
+<<<<<<< HEAD
 tester.o: tester.c patterns.h
 static_prefix_scan.o: static_prefix_scan.c prefix_scan.h
+=======
+static_prefix_scan.o: static_prefix_scan.c prefix_scan.h
+>>>>>>> master

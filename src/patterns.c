@@ -5,7 +5,7 @@
 #include "prefix_scan.h"
 #include "cilk/cilk.h"
 #include "cilk/cilk_api.h"
-#include "prefix_sum.h"
+#include "prefix_scan.h"
 
 #include <stdio.h>
 
@@ -16,7 +16,7 @@
 
 
 //custom workers
-static void customWorkerAdd(void* a, const void* b, const void* c) {
+static void auxWorkerAdd(void* a, const void* b, const void* c) {
 
 	TYPE res_b = b == NULL ? SUM_NEUTRAL : *(TYPE *)b;
 	TYPE res_c = c == NULL ? SUM_NEUTRAL : *(TYPE *)c;
@@ -24,6 +24,7 @@ static void customWorkerAdd(void* a, const void* b, const void* c) {
    // a = b + c
     *(TYPE *)a = res_b + res_c;
 }
+
 
 void map (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(void *v1, const void *v2)) {
 	assert (dest != NULL);
@@ -51,33 +52,33 @@ void reduce (void *dest, void *src, size_t nJob,  size_t sizeJob,
 	assert (dest != NULL);
 	assert (src != NULL);
 	assert (worker != NULL);
-	
+
 	size_t num_tiles = nJob;
 	size_t tile_remainder;
-	
+
 	void *read = src;
 	void *write = malloc((num_tiles / 2) * sizeJob);
-	
+
 	void *aux = malloc((num_tiles / 4) * sizeJob);
-	
+
 	while(num_tiles > 1) {
-		tile_remainder = num_tiles % 2;	
+		tile_remainder = num_tiles % 2;
 		num_tiles = num_tiles / 2;
-		
+
 		cilk_for(size_t curr_tile = 0; curr_tile < num_tiles; curr_tile ++)
 			worker(write + curr_tile * sizeJob, read + (2 * curr_tile) * sizeJob, read + (2 * curr_tile + 1) * sizeJob);
-			
+
 		if(tile_remainder == 1)
 			worker(write, write, read + num_tiles * 2 * sizeJob);
-		
+
 		read = write;
 		write = aux;
 		aux = read;
 	}
-	
-	if(num_tiles != nJob) 
+
+	if(num_tiles != nJob)
 		memcpy(dest, read, sizeJob);
-	
+
 	free(aux);
 	free(write);
 }
@@ -88,35 +89,36 @@ void tiled_reduce (void *dest, void *src, size_t nJob,  size_t sizeJob,
 	assert (dest != NULL);
 	assert (src != NULL);
 	assert (worker != NULL);
+	assert (tileSize > 1)
 
 	size_t num_tiles = nJob;
 	size_t tile_remainder;
-	
+
 	void *read = src;
 
 	// the below memory zones only get allocated if tiled reduce is to actually occur; otherwise sequential reduce will take place and the memory would not be necessary
 	void *write = (num_tiles / tileSize) <= 1 ? NULL : malloc((num_tiles / tileSize) * sizeJob); // maximum size must be the number of tiles for the first reduce step
-	
+
 	void *aux = (num_tiles / tileSize) <= 1 ? NULL : malloc((num_tiles / tileSize / tileSize) * sizeJob); // maximum size must be the number of tiles for the second reduce step
-	
+
 	while(num_tiles / tileSize > 1) {	// while it is possible to have more than one tile of tileSize
-		tile_remainder = num_tiles % tileSize;	
-		num_tiles = num_tiles / tileSize;	// get the number of tiles 
-		
+		tile_remainder = num_tiles % tileSize;
+		num_tiles = num_tiles / tileSize;	// get the number of tiles
+
 		cilk_for(size_t curr_tile = 0; curr_tile < num_tiles; curr_tile++) {
 			void *work_start = read + sizeJob * (curr_tile * tileSize + (curr_tile < tile_remainder ? curr_tile : tile_remainder));
 			size_t work_size = tileSize + (curr_tile < tile_remainder ? 1 : 0);
 			void *writeTo = write + curr_tile * sizeJob;
 			reduce_seq(writeTo, work_start, work_size, sizeJob, worker);
 		}
-		
+
 		read = write;
 		write = aux;
 		aux = read;
 	}
-	
+
 	reduce_seq(dest, read, num_tiles, sizeJob, worker);
-	
+
 	free(aux);
 	free(write);
 }
@@ -137,7 +139,7 @@ void scan(void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(voi
 	assert (dest != NULL);
 	assert (src != NULL);
 	assert (worker != NULL);
-	
+
 	prefix_scan(src, dest, nJob, sizeJob, worker);
 }
 
@@ -158,18 +160,18 @@ int split(void* dest, void* src, size_t nJob, size_t sizeJob, const int* filter)
 	assert (src != NULL);
 	assert (filter != NULL);
 
-	//inverting mask
+	// Invert mask
 	int * invertedFilter = malloc( nJob * sizeof(int) );
 	cilk_for(size_t i = 0; i < nJob; i++){
 		invertedFilter[i] = 1 - filter[i];
 	}
 
-	//calculating positive and negative bitsums
+	// Calculate positive and negative bitsums
 	int * negativesBitSum = malloc( nJob * sizeof(int) );
-	cilk_spawn scan( (void*) negativesBitSum, invertedFilter, nJob, sizeof(int) ,customWorkerAdd);
+	cilk_spawn scan( (void*) negativesBitSum, invertedFilter, nJob, sizeof(int) ,auxWorkerAdd);
 
 	int * positivesBitSum = malloc( nJob * sizeof(int) );
-	scan( (void*) positivesBitSum, (void *) filter, nJob, sizeof(int), customWorkerAdd);
+	scan( (void*) positivesBitSum, (void *) filter, nJob, sizeof(int), auxWorkerAdd);
 
 	cilk_sync;
 
@@ -196,20 +198,20 @@ int split_seq(void* dest, void* src, size_t nJob, size_t sizeJob, const int* fil
 	assert (src != NULL);
 	assert (filter != NULL);
 
-	//inverting mask
+	// Invert mask
 	int * invertedFilter = malloc( nJob * sizeof(int) );
 	for(size_t i = 0; i < nJob; i++){
 		invertedFilter[i] = 1 - filter[i];
 	}
 
-	//calculating positive and negative bitsums
+	// Calculate positive and negative bitsums
 	int * negativesBitSum = malloc( nJob * sizeof(int) );
-	scan( (void*) negativesBitSum, invertedFilter, nJob, sizeof(int) ,customWorkerAdd);
+	scan( (void*) negativesBitSum, invertedFilter, nJob, sizeof(int) ,auxWorkerAdd);
 
 	int * positivesBitSum = malloc( nJob * sizeof(int) );
-	scan( (void*) positivesBitSum, (void *) filter, nJob, sizeof(int), customWorkerAdd);
+	scan( (void*) positivesBitSum, (void *) filter, nJob, sizeof(int), auxWorkerAdd);
 
-	//packing values
+	// Pack values
 	size_t offset = positivesBitSum[nJob-1];
 
 	for(size_t i = 0; i < nJob; i++){
@@ -226,16 +228,16 @@ int split_seq(void* dest, void* src, size_t nJob, size_t sizeJob, const int* fil
 }
 
 int pack (void* dest, void* src, size_t nJob, size_t sizeJob, const int* filter)
-{	
+{
 	assert (dest != NULL);
 	assert (src != NULL);
 	assert (filter != NULL);
 
-	//allocating memory for bitsum
+	// Allocate memory for bitsum
 	int *bitSum = malloc( nJob * sizeof(int) );
 
-	//calculate bitsum
-	scan( (void*) bitSum, (void *) filter, nJob, sizeof(int), customWorkerAdd);
+	// Calculate bitsum
+	scan( (void*) bitSum, (void *) filter, nJob, sizeof(int), auxWorkerAdd);
 
 	cilk_for(size_t i = 0; i < nJob; i++){
 		if(filter[i]){
@@ -251,7 +253,6 @@ int pack (void* dest, void* src, size_t nJob, size_t sizeJob, const int* filter)
 }
 
 int pack_seq (void *dest, void *src, size_t nJob, size_t sizeJob, const int *filter) {
-	/* To be implemented */
 	int pos = 0;
 	for (int i=0; i < nJob; i++) {
 		if (filter[i]) {
@@ -266,7 +267,7 @@ void gather (void *dest, void *src, size_t nJob, size_t sizeJob, const int *filt
 	assert (dest != NULL);
 	assert (src != NULL);
 	assert (filter != NULL);
-	
+
 	cilk_for (int i=0; i < nFilter; i++) {
 		memcpy (dest + i * sizeJob, src + filter[i] * sizeJob, sizeJob);
 	}
@@ -276,7 +277,7 @@ void gather_seq (void *dest, void *src, size_t nJob, size_t sizeJob, const int *
 	assert (dest != NULL);
 	assert (src != NULL);
 	assert (filter != NULL);
-	
+
 	for (int i=0; i < nFilter; i++) {
 		memcpy (dest + i * sizeJob, src + filter[i] * sizeJob, sizeJob);
 	}
@@ -286,7 +287,7 @@ void scatter (void *dest, void *src, size_t nJob, size_t sizeJob, const int *fil
 	assert (dest != NULL);
 	assert (src != NULL);
 	assert (filter != NULL);
-	
+
 	cilk_for (int i=0; i < nJob; i++) {
 		memcpy (dest + filter[i] * sizeJob, src + i * sizeJob, sizeJob);
 	}
@@ -296,7 +297,7 @@ void scatter_seq (void *dest, void *src, size_t nJob, size_t sizeJob, const int 
 	assert (dest != NULL);
 	assert (src != NULL);
 	assert (filter != NULL);
-	
+
 	for (int i=0; i < nJob; i++) {
 		memcpy (dest + filter[i] * sizeJob, src + i * sizeJob, sizeJob);
 	}
@@ -322,7 +323,7 @@ void pipeline (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker
 		cilk_sync;
 	}
 
-	// Normal functioning of the pipeline
+	// Normal execution of the pipeline
 	limit = nJob;
 	for(size_t i =  nWorkers-1; i < limit; i++) {
 		// Compute each worker
@@ -333,7 +334,7 @@ void pipeline (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker
 		cilk_sync;
 	}
 
-	// Finish of the ramaining tasks
+	// Execute of the ramaining (last) tasks
 	limit = nJob + nWorkers-1;
 	for(size_t i = nJob; i < limit; i++) {
 		// Compute each worker
@@ -374,7 +375,7 @@ void pipeline_farm (void *dest, void *src, size_t nJob, size_t sizeJob, void (*w
 			}
 		}
 
-		// Normal functioning of the pipeline
+		// Normal execution of the pipeline
 		limit = nBatches;
 		for(size_t i =  nWorkers-1; i < limit; i++) {
 			// Compute each worker
@@ -388,7 +389,7 @@ void pipeline_farm (void *dest, void *src, size_t nJob, size_t sizeJob, void (*w
 			}
 		}
 
-		// Finish of the ramaining tasks
+		// Finish of the ramaining (last) tasks
 		limit = nBatches + nWorkers-1;
 		for(size_t i = nBatches; i < limit; i++) {
 			// Compute each worker
@@ -428,8 +429,8 @@ void farm (void *dest, void *src, size_t nJob, size_t sizeJob, void (*worker)(vo
 		// Compute the start of the worker's batch
 		size_t start = i*(nJob / nWorkers) + (( i < nJob % nWorkers) ? i : nJob % nWorkers);
 
-		// In each worker, execute serially each job on his batch
-		for(size_t j = 0; j < batchSize; j++ ) {
+		// In each worker, execute sequentially each job on his batch
+		for(int j = 0; j < batchSize; j++ ) {
 			worker(dest + (start+j) * sizeJob, src + (start+j) * sizeJob);
 		}
 	}

@@ -2,6 +2,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "patterns.h"
+#include <stdio.h>
 
 #include "patterns.h"
 #include "debug.h"
@@ -10,7 +11,8 @@
 
 #define TYPE double
 #define FMT "%lf"
-
+#define SUM_NEUTRAL 0.0
+#define MULT_NEUTRAL 1.0
 
 //=======================================================
 // Workers
@@ -35,37 +37,52 @@ static void workerMin(void* a, const void* b, const void* c) {
 */
 
 static void workerAdd(void* a, const void* b, const void* c) {
-    // a = b + c
-    *(TYPE *)a = *(TYPE *)b + *(TYPE *)c;
+	TYPE res_b = b == NULL ? SUM_NEUTRAL : *(TYPE *)b;
+	TYPE res_c = c == NULL ? SUM_NEUTRAL : *(TYPE *)c;
+
+   // a = b + c
+    *(TYPE *)a = res_b + res_c;
 }
 
 /*
 static void workerSubtract(void* a, const void* b, const void* c) {
-    // a = n - c
-    *(TYPE *)a = *(TYPE *)b - *(TYPE *)c;
+	TYPE res_b = b == NULL ? SUM_NEUTRAL : *(TYPE *)b;
+	TYPE res_c = c == NULL ? SUM_NEUTRAL : *(TYPE *)c;
+    
+	// a = b - c
+    *(TYPE *)a = res_b - res_c;
 }
 */
 
 /*
 static void workerMultiply(void* a, const void* b, const void* c) {
-    // a = b * c
-    *(TYPE *)a = *(TYPE *)b + *(TYPE *)c;
+    TYPE res_b = b == NULL ? MULT_NEUTRAL : *(TYPE *)b;
+	TYPE res_c = c == NULL ? MULT_NEUTRAL : *(TYPE *)c;
+	
+	// a = b * c
+    *(TYPE *)a = res_b * res_c;
 }
 */
 
 static void workerAddOne(void* a, const void* b) {
+	TYPE res_b = b == NULL ? SUM_NEUTRAL : *(TYPE *)b;
+	
     // a = b + 1
-    *(TYPE *)a = *(TYPE *)b + 1;
+    *(TYPE *)a = res_b + 1;
 }
 
 static void workerMultTwo(void* a, const void* b) {
-    // a = b * 2
-    *(TYPE *)a = *(TYPE *)b * 2;
+    TYPE res_b = b == NULL ? MULT_NEUTRAL : *(TYPE *)b;
+	
+	// a = b * 2
+    *(TYPE *)a = res_b * 2;
 }
 
 static void workerDivTwo(void* a, const void* b) {
-    // a = b / 2
-    *(TYPE *)a = *(TYPE *)b / 2;
+    TYPE res_b = b == NULL ? MULT_NEUTRAL : *(TYPE *)b;
+	
+	// a = b / 2
+    *(TYPE *)a = res_b / 2;
 }
 
 
@@ -107,8 +124,24 @@ void testPack (void *src, size_t n, size_t size) {
     free (dest);
 }
 
+void testSplit (void *src, size_t n, size_t size) {
+
+    TYPE *dest = malloc (n * size);
+    int *filter = calloc(n,sizeof(*filter));
+    for (int i = 0;  i < n;  i++)
+        filter[i] = (i == 0 || i == n/2 || i == n-1);
+    int newN = split (dest, src, n, size, filter);
+    printInt (filter, n, "filter");
+    printDouble (dest, newN, __FUNCTION__);
+
+    free(filter);
+
+    free (dest);
+
+}
+
 void testGather (void *src, size_t n, size_t size) {
-    int nFilter = 3;
+	int nFilter = 3;
     TYPE *dest = malloc (nFilter * size);
     int filter[nFilter];
     for (int i = 0;  i < nFilter;  i++)
@@ -166,6 +199,7 @@ TESTFUNCTION testFunction[] = {
     testReduce,
     testScan,
     testPack,
+	testSplit,
     testGather,
     testScatter,
     testPipeline,
@@ -177,6 +211,7 @@ char *testNames[] = {
     "testReduce",
     "testScan",
     "testPack",
+	"testSplit",
     "testGather",
     "testScatter",
     "testPipeline",
