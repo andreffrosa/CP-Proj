@@ -31,7 +31,7 @@ void tiled_reduce (
   size_t nJob,          // # elements in the source array
   size_t sizeJob,       // Size of each element in the source array
   void (*worker)(void *v1, const void *v2, const void *v3), // [ v1 = op (v2, v3) ]
-  size_t tileSize		// size (in sizeJob) of each tile to reduce
+  size_t tileSize		    // # elements of each tile to reduce
 );
 
 void reduce_seq (
@@ -65,7 +65,7 @@ int split(
   size_t sizeJob,       // Size of each element in the source array
   const int* filter		// Filter for pack
  );
- 
+
 int split_seq(
   void* dest,           // Target array
   void* src,            // Source array
@@ -140,7 +140,7 @@ void pipeline_farm (
   size_t sizeJob,       // Size of each element in the source array
   void (*workerList[])(void *v1, const void *v2), // one function for each stage of the pipeline
   size_t nWorkers,      // # stages in the pipeline
-  size_t nFarms		// # simultaneous elements in each stage of the pipeline
+  size_t nFarms		      // # simultaneous pipelines
 );
 
 void pipeline_seq (
