@@ -652,7 +652,11 @@ void variableSizeTester(double*** results, EVAL_TYPE eval_type, size_t runs, siz
 	// Compute the average between the different runs
 	if( runs >= 1 ) {
 		for(size_t i = 0; i < n_steps; i++) {
-			size_t current_size = i*step + start;
+			size_t current_size;
+			if( eval_type == EXP_SIZE)
+				current_size = powerFun(step, i) + start;
+			else
+				current_size = i*step + start;
 			printf("array size=%lu \t runs=%lu\n", current_size, runs );
 			printf("Pattern \t\t\t Sequential 	\t Parallel \t Parallel2\n");
 			for(size_t j = 0; j < nEvalFunctions; j++){
