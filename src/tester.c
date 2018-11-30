@@ -98,6 +98,10 @@ unsigned long evalReduce(void* src, void* dest, size_t nJob, size_t size, MODE m
 		start = clock();
 		reduce (dest, src, nJob, size, workerAdd);
 		end = clock();
+	}else if(mode == ALT) {
+		start = clock();
+		tiled_reduce (dest, src, nJob, size, workerAdd, 3);
+		end = clock();
 	} else {
 		return -1;
 	}
@@ -118,6 +122,59 @@ unsigned long evalScan(void* src, void* dest, size_t nJob, size_t size, MODE mod
 	} else if (mode == PAR) {
 		start = clock();
 		scan (dest, src, nJob, size, workerAdd);
+		end = clock();
+	} else {
+		return -1;
+	}
+
+	us_cpu_time_used = (unsigned long)((((double) (end - start)) / (CLOCKS_PER_SEC/ (1000*1000))) ); // in microseconds
+
+	return us_cpu_time_used;
+}
+
+unsigned long evalPack(void* src, void* dest, size_t nJob, size_t size, MODE mode) {
+	clock_t start, end;
+	unsigned long us_cpu_time_used;
+
+	int *filter = calloc(nJob, sizeof(*filter));
+	for(int i = 0; i < nJob; i++){
+		filter[i] = (i==0 || i == nJob/2 || i == nJob -1 );
+	}
+
+	if( mode == SEQ) {
+		start = clock();
+		pack_seq (dest, src, nJob, size, filter);
+		end = clock();
+	} else if (mode == PAR) {
+		start = clock();
+		pack (dest, src, nJob, size, filter);
+		end = clock();
+	} else {
+		return -1;
+	}
+
+	us_cpu_time_used = (unsigned long)((((double) (end - start)) / (CLOCKS_PER_SEC/ (1000*1000))) ); // in microseconds
+
+	return us_cpu_time_used;
+}
+
+
+unsigned long evalSplit(void* src, void* dest, size_t nJob, size_t size, MODE mode) {
+	clock_t start, end;
+	unsigned long us_cpu_time_used;
+
+	int *filter = calloc(nJob, sizeof(*filter));
+	for(int i = 0; i < nJob; i++){
+		filter[i] = (i==0 || i == nJob/2 || i == nJob -1 );
+	}
+
+	if( mode == SEQ) {
+		start = clock();
+		split_seq (dest, src, nJob, size, filter);
+		end = clock();
+	} else if (mode == PAR) {
+		start = clock();
+		split (dest, src, nJob, size, filter);
 		end = clock();
 	} else {
 		return -1;
@@ -237,7 +294,8 @@ EVALFUNCTION evalFunction[] = {
 		evalMap,
 		evalReduce,
 		evalScan,
-		//testPack,
+		evalPack,
+		evalSplit,
 		evalGather,
 		evalScatter,
 		evalPipeline,
@@ -249,7 +307,8 @@ char *evalNames[] = {
 		"Map",
 		"Reduce",
 		"Scan",
-		//"testPack",
+		"Pack",
+		"Split",
 		"Gather",
 		"Scatter",
 		"Pipeline",
@@ -258,9 +317,9 @@ char *evalNames[] = {
 
 char *altNames[] = {
 		"",
-		//"testReduce",
+		"tiled_reduce",
 		"",
-		//"testPack",
+		"",
 		"",
 		"",
 		"PipelineFarm",
