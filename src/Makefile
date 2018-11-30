@@ -1,6 +1,7 @@
 CC=gcc
 CFLAGS=-g -std=gnu11 -Wall -Werror -fcilkplus
 LDFLAGS=-lcilkrts
+LKFLAGS=-lm
 
 S=debug.c main.c patterns.c unit.c static_prefix_scan.c
 O=$(patsubst %.c,%.o,$(S))
@@ -10,9 +11,9 @@ all: $(TARGET)
 
 main: $(O)
 	$(CC) -o $@ $^ $(LDFLAGS)
-	
+
 tester:
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ tester.c patterns.c static_prefix_scan.c
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ tester.c patterns.c static_prefix_scan.c $(LKFLAGS)
 
 clean:
 	rm -f $(TARGET) $(O) tester

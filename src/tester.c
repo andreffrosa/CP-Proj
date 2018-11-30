@@ -5,6 +5,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <string.h>
+#include <math.h>
 
 //#include "cilk/cilk.h"
 #include "cilk/cilk_api.h"
@@ -20,10 +21,22 @@ typedef enum MODE_ {
 	MODES=3
 } MODE;
 
-void runTester(double*** result, size_t runs, size_t start, size_t max_size, size_t step);
+typedef enum EVAL_TYPE_ {
+	LINEAR_SIZE=0,
+	EXP_SIZE=1,
+	LINEAR_WEIGHT=2,
+	TYPES=3
+} EVAL_TYPE;
+
+static volatile size_t worker_weight;
+
+void variableWorkTest(double*** results, EVAL_TYPE eval_type, size_t runs, size_t start, size_t n_steps, size_t step, size_t weight);
+void variableSizeTester(double*** result, EVAL_TYPE eval_type, size_t runs, size_t start, size_t max_size, size_t step, size_t weight);
 double*** createResultsMatrix(size_t sizes, size_t functions);
 void freeResultsMatrix(double*** results, size_t sizes, size_t functions);
 int *createRandomBinaryFilter(size_t size);
+static void processArgs(int argc, char** argv, EVAL_TYPE* eval_type, size_t* runs, size_t* step, size_t* start, size_t* n_steps, size_t* weight);
+void saveResults(double*** results, size_t step, size_t start, size_t n_steps, char* filePattern);
 
 /*static void workerAdd(void* a, const void* b, const void* c) {
 	// a = b + c
@@ -85,7 +98,7 @@ static void workerHeavy(void* a, const void* b) {
 }
 
 static void workerHeavyTwo(void* a, const void* b, const void*c) {
-	
+
 	TYPE res_b = b == NULL ? 0.0 : *(TYPE *)b;
 	TYPE res_c = c == NULL ? 0.0 : *(TYPE *)c;
 	TYPE aux = 0.0;
@@ -115,8 +128,6 @@ static void workerHeavyTwo(void* a, const void* b, const void*c) {
 		*(TYPE *)a = aux;
     }
 }
-
-//https://www.gnu.org/software/libc/manual/html_node/CPU-Time.html para colocar na bibliografia
 
 unsigned long evalMap(void* src, void* dest, size_t nJob, size_t size, MODE mode) {
 	clock_t start, end;
@@ -382,8 +393,24 @@ char *altNames[] = {
 
 int nEvalFunctions = sizeof (evalFunction)/sizeof(evalFunction[0]);
 
-static void processArgs(int argc, char** argv, size_t* runs, size_t* step, size_t* start, size_t* n_steps);
-void saveResults(double*** results, size_t x_base, size_t y_base, size_t start, size_t n_steps, char* filePattern);
+TYPE* createRandomArray(size_t n) {
+	TYPE *src = malloc(sizeof(*src) * n);
+
+	for (size_t i = 0; i < n; i++)
+		src[i] = drand48();
+
+	return src;
+}
+
+int *createRandomBinaryFilter(size_t size) {
+	int *filter = malloc(sizeof(int) * size);
+
+	for(int i = 0; i < size; i++) {
+		filter[i] = rand() % 2;
+	}
+
+	return filter;
+}
 
 // tester -n 10 -s 1000
 int main(int argc, char** argv) {
@@ -393,25 +420,94 @@ int main(int argc, char** argv) {
 	size_t step = 10000;
 	size_t start = 10000;
 	size_t n_steps = 10;
+	size_t weight = 1;
+	EVAL_TYPE eval_type = LINEAR_SIZE;
 
 	// Initialize arguments
-	processArgs(argc, argv, &runs, &step, &start, &n_steps);
+	processArgs(argc, argv, &eval_type, &runs, &step, &start, &n_steps, &weight);
 
 	printf("runs=%lu \t step=%lu \t start=%lu \t n_steps=%lu cilk_workers=%d \n", runs, step, start, n_steps, __cilkrts_get_nworkers());
 
 	//size_t sizes = ((n_steps-start) / (double)step)+1;
 	double*** results = createResultsMatrix(n_steps, nEvalFunctions);
 
-	runTester(results, runs, start, n_steps, step);
+	if( eval_type == LINEAR_SIZE || eval_type == EXP_SIZE )
+		variableSizeTester(results, eval_type, runs, start, n_steps, step, weight);
+	else
+		variableWorkTest(results, eval_type, runs, start, n_steps, step, weight);
 
-	saveResults(results, 1, step, start, n_steps, "./plots/%s%s");
+	saveResults(results, step, start, n_steps, "./plots/%s%s");
 
 	freeResultsMatrix(results, n_steps, nEvalFunctions);
 
 	return 0;
 }
 
-void saveResults(double*** results, size_t y_base, size_t step, size_t start, size_t n_steps, char* filePattern) {
+void variableWorkTest(double*** results, EVAL_TYPE eval_type, size_t runs, size_t start, size_t n_steps, size_t step, size_t weight) {
+
+	size_t current_size = start;
+	TYPE* src = createRandomArray(current_size);
+	TYPE* dest = malloc (current_size*sizeof(TYPE));
+
+	for(size_t i = 0; i < n_steps; i++) {
+
+		//printf("Current_size: %lu\n", current_size);
+
+		worker_weight = weight + i*step;
+
+		for(size_t f = 0; f < nEvalFunctions; f++) {
+			//printf("Current pattern: %s\n", evalNames[f]);
+			for(size_t run = 0; run < runs; run++) {
+				// printf("Size=%lu \t pattern=%s \t run=%lu/%lu \n", current_size, evalNames[f], run+1, runs);
+
+				// Parallel
+				unsigned long t;
+				t = evalFunction[f](src, dest, current_size, sizeof(TYPE), PAR);
+				printf("parallel_%s %lu microseconds\n", evalNames[f], t);
+
+				results[i][f][PAR] += t;
+
+				// Seq
+				t = evalFunction[f](src, dest, current_size, sizeof(TYPE), SEQ);
+				printf("sequential_%s %lu microseconds\n", evalNames[f], t);
+
+				results[i][f][SEQ] += t;
+
+				// Alternative
+				t = evalFunction[f](src, dest, current_size, sizeof(TYPE), ALT);
+				printf("sequential_%s %lu microseconds\n", evalNames[f], t);
+
+				results[i][f][ALT] += t;
+			}
+		}
+		free(src);
+		free(dest);
+	}
+
+	// Compute the average between the different runs
+	if( runs >= 1 ) {
+		for(size_t i = 0; i < n_steps; i++) {
+			size_t worker_weight = weight + i*step;
+			printf("worker weight=%lu \t runs=%lu\n", worker_weight, runs );
+			printf("Pattern \t\t\t Sequential 	\t Parallel \t Parallel2\n");
+			for(size_t j = 0; j < nEvalFunctions; j++){
+				for(size_t k = 0; k < 2; k++){
+					results[i][j][k] = results[i][j][k] / runs;
+				}
+
+				printf("%s \t\t\t %f us \t %f us", evalNames[j], results[i][j][SEQ], results[i][j][PAR]);
+				if( results[i][j][PAR] > 0 ) {
+					printf( "\t %f us", results[i][j][PAR]);
+				}
+				printf("\n");
+			}
+			printf("\n");
+		}
+	}
+}
+
+
+void saveResults(double*** results, size_t step, size_t start, size_t n_steps, char* filePattern) {
 
 	FILE * fp;
 
@@ -442,15 +538,21 @@ void saveResults(double*** results, size_t y_base, size_t step, size_t start, si
 
 }*/
 
-static void processArgs(int argc, char** argv, size_t* runs, size_t* step, size_t* start, size_t* n_steps) {
+static void processArgs(int argc, char** argv, EVAL_TYPE* eval_type, size_t* runs, size_t* step, size_t* start, size_t* n_steps, size_t* weight) {
 	int c;
 
 	opterr = 0;
 
-	while ((c = getopt(argc, argv, "r:s:i:n:")) != -1)
+	while ((c = getopt(argc, argv, "r:s:i:n:t:w:")) != -1)
 		switch (c) {
+		case 't':
+			*eval_type = strtol (optarg, NULL, 10);
+			break;
+		case 'w':
+			*weight = strtol (optarg, NULL, 10);
+			break;
 		case 'r':
-			*runs = strtol (optarg, NULL, 10);;
+			*runs = strtol (optarg, NULL, 10);
 			break;
 		case 's':
 			*step = strtol (optarg, NULL, 10);
@@ -462,7 +564,7 @@ static void processArgs(int argc, char** argv, size_t* runs, size_t* step, size_
 			*n_steps = strtol (optarg, NULL, 10);
 			break;
 		case '?':
-			if (optopt == 'r' || optopt == 's' || optopt == 'i' || optopt == 'n' )
+			if (optopt == 'r' || optopt == 's' || optopt == 'i' || optopt == 'n' || optopt == 't' || optopt == 'w' )
 				fprintf(stderr, "Option -%c is followed a the number.\n", optopt);
 			/*else if (isprint(optopt))
 				fprintf(stderr, "Unknown option `-%c'.\n", optopt);*/
@@ -470,25 +572,6 @@ static void processArgs(int argc, char** argv, size_t* runs, size_t* step, size_
 				fprintf(stderr, "Unknown option character `\\x%x'.\n", optopt);
 			break;
 		}
-}
-
-TYPE* createRandomArray(size_t n) {
-	TYPE *src = malloc(sizeof(*src) * n);
-
-	for (size_t i = 0; i < n; i++)
-		src[i] = drand48();
-
-	return src;
-}
-
-int *createRandomBinaryFilter(size_t size) {
-	int *filter = malloc(sizeof(int) * size);
-
-	for(int i = 0; i < size; i++) {
-		filter[i] = rand() % 2;
-	}
-
-	return filter;
 }
 
 double*** createResultsMatrix(size_t n_steps, size_t functions) {
@@ -513,10 +596,17 @@ void freeResultsMatrix(double*** results, size_t n_steps, size_t functions) {
 	}
 }
 
-void runTester(double*** results, size_t runs, size_t start, size_t n_steps, size_t step) {
+void variableSizeTester(double*** results, EVAL_TYPE eval_type, size_t runs, size_t start, size_t n_steps, size_t step, size_t weight) {
+
+	worker_weight = weight;
 
 	for(size_t i = 0; i < n_steps; i++) {
-		size_t current_size = i*step + start;
+
+		size_t current_size;
+		if( eval_type == EXP_SIZE)
+			current_size = (size_t)pow((double)step, (double)i) + start;
+		else
+			current_size = i*step + start;
 		//printf("Current_size: %lu\n", current_size);
 
 		TYPE* src = createRandomArray(current_size);
