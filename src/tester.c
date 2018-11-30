@@ -70,7 +70,7 @@ static void workerHeavy(void* a, const void* b) {
     // a = b / 2
 	TYPE res_b = b == NULL ? 0.0 : *(TYPE *)b;
     TYPE aux = 0.0;
-	for(int i = 0; i < 1000; i++ ) {
+	for(int i = 0; i < worker_weight; i++ ) {
 		aux = (res_b / 251);
 		aux = (res_b / 241);
 		aux = (res_b / 239);
@@ -102,7 +102,7 @@ static void workerHeavyTwo(void* a, const void* b, const void*c) {
 	TYPE res_b = b == NULL ? 0.0 : *(TYPE *)b;
 	TYPE res_c = c == NULL ? 0.0 : *(TYPE *)c;
 	TYPE aux = 0.0;
-	for(int i = 0; i < 1000; i++ ) {
+	for(int i = 0; i < worker_weight; i++ ) {
 		aux = (res_b / 251) + (res_c / 41);
 		aux = (res_b / 241) + (res_c / 43);
 		aux = (res_b / 239) + (res_c / 47);
