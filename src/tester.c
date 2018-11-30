@@ -56,11 +56,31 @@ static void workerSleep(void* a, const void* b) {
 static void workerHeavy(void* a, const void* b) {
     // a = b / 2
 	TYPE res_b = b == NULL ? 0.0 : *(TYPE *)b;
-    
-	for(int i = 0; i < 10; i++ ) {
-		*(TYPE *)a = res_b / 2;
-		*(TYPE *)a = res_b * 2;
-		*(TYPE *)a = res_b + 1;
+    TYPE aux = 0.0;
+	for(int i = 0; i < 1000; i++ ) {
+		aux = (res_b / 251);
+		aux = (res_b / 241);
+		aux = (res_b / 239);
+		aux = (res_b / 233);
+		aux = (res_b / 229);
+		aux = (res_b / 227);
+		aux = (res_b / 223);
+		aux = (res_b / 211);
+		aux = (res_b / 199);
+		aux = (res_b / 197);
+		aux = (res_b / 193);
+		aux = (res_b / 191);
+		aux = (res_b / 181);
+		aux = (res_b / 179);
+		aux = (res_b / 173);
+		aux = (res_b / 167);
+		aux = (res_b / 163);
+		aux = (res_b / 157);
+		aux = (res_b / 151);
+		aux = (res_b / 149);
+		aux = (res_b / 139);
+		aux = res_b + 1;
+		*(TYPE *)a = aux;
     }
 }
 
@@ -68,11 +88,31 @@ static void workerHeavyTwo(void* a, const void* b, const void*c) {
 	
 	TYPE res_b = b == NULL ? 0.0 : *(TYPE *)b;
 	TYPE res_c = c == NULL ? 0.0 : *(TYPE *)c;
-	
-	for(int i = 0; i < 10; i++ ) {
-		*(TYPE *)a = res_b / 2 + res_c / 2;
-		*(TYPE *)a = res_b * 2 + res_c * 2;
-		*(TYPE *)a = res_b + res_c;
+	TYPE aux = 0.0;
+	for(int i = 0; i < 1000; i++ ) {
+		aux = (res_b / 251) + (res_c / 41);
+		aux = (res_b / 241) + (res_c / 43);
+		aux = (res_b / 239) + (res_c / 47);
+		aux = (res_b / 233) + (res_c / 53);
+		aux = (res_b / 229) + (res_c / 59);
+		aux = (res_b / 227) + (res_c / 61);
+		aux = (res_b / 223) + (res_c / 67);
+		aux = (res_b / 211) + (res_c / 71);
+		aux = (res_b / 199) + (res_c / 73);
+		aux = (res_b / 197) + (res_c / 79);
+		aux = (res_b / 193) + (res_c / 83);
+		aux = (res_b / 191) + (res_c / 89);
+		aux = (res_b / 181) + (res_c / 97);
+		aux = (res_b / 179) + (res_c / 101);
+		aux = (res_b / 173) + (res_c / 103);
+		aux = (res_b / 167) + (res_c / 107);
+		aux = (res_b / 163) + (res_c / 109);
+		aux = (res_b / 157) + (res_c / 113);
+		aux = (res_b / 151) + (res_c / 127);
+		aux = (res_b / 149) + (res_c / 131);
+		aux = (res_b / 139) + (res_c / 137);
+		aux = res_b + res_c;
+		*(TYPE *)a = aux;
     }
 }
 
