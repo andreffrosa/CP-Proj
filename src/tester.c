@@ -529,7 +529,7 @@ void runTester(double*** results, size_t runs, size_t start, size_t n_steps, siz
 	for(size_t i = 0; i < n_steps; i++) {
 		size_t current_size;
 		if(multStep)
-			current_size = powerFun(step, i);
+			current_size = powerFun(step, i) + start;
 		else
 			current_size = i*step + start;
 		//printf("Current_size: %lu\n", current_size);
