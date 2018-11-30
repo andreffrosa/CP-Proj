@@ -557,7 +557,7 @@ The conclusion goes here.
 The authors would like to thank...
 
 
-
+\cite{2018arXiv180506989L}
 
 
 % trigger a \newpage just before the given reference
@@ -583,17 +583,16 @@ The authors would like to thank...
 % set second argument of \begin to the number of references
 % (used to reserve space for the reference number labels box)
 %\begin{thebibliography}{1}
-
 %\bibitem{IEEEhowto:kopka}
 %H.~Kopka and P.~W. Daly, \emph{A Guide to \LaTeX}, 3rd~ed.\hskip 1em plus
 %  0.5em minus 0.4em\relax Harlow, England: Addison-Wesley, 1999.
 %
 %\end{thebibliography}
 
-\bibliographystyle{splncs04}
-\bibliography{bibliography}
-
-
+\bibliographystyle{IEEEtranS}
+\bibliography{./IEEEabrv,bibliography}
+%\bibliographystyle{./IEEEtran}
+%\bibliography{./IEEEabrv,./IEEEexample}
 
 % that's all folks
 \end{document}
