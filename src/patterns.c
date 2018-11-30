@@ -89,7 +89,7 @@ void tiled_reduce (void *dest, void *src, size_t nJob,  size_t sizeJob,
 	assert (dest != NULL);
 	assert (src != NULL);
 	assert (worker != NULL);
-	assert (tileSize > 1)
+	assert (tileSize > 1);
 
 	size_t num_tiles = nJob;
 	size_t tile_remainder;
