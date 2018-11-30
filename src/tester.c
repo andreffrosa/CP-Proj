@@ -25,7 +25,7 @@ double*** createResultsMatrix(size_t sizes, size_t functions);
 void freeResultsMatrix(double*** results, size_t sizes, size_t functions);
 int *createRandomBinaryFilter(size_t size);
 
-static void workerAdd(void* a, const void* b, const void* c) {
+/*static void workerAdd(void* a, const void* b, const void* c) {
 	// a = b + c
 	TYPE res_b = b == NULL ? 0.0 : *(TYPE *)b;
 	TYPE res_c = c == NULL ? 0.0 : *(TYPE *)c;
@@ -47,20 +47,33 @@ static void workerDivTwo(void* a, const void* b) {
 	*(TYPE *)a = *(TYPE *)b / 2;
 }
 
-/*static void workerHeavy(void* a, const void* b) {
-    // a = b / 2
-
-    for(int i = 0; i < 10; i++ ) {
- *(TYPE *)a = *(TYPE *)b / 2;
- *(TYPE *)a = *(TYPE *)b * 2;
- *(TYPE *)a = *(TYPE *)b + 1;
-    }
-}*/
-
 static void workerSleep(void* a, const void* b) {
 	// a = b / 2
 
 	usleep(150);
+}*/
+
+static void workerHeavy(void* a, const void* b) {
+    // a = b / 2
+	TYPE res_b = b == NULL ? 0.0 : *(TYPE *)b;
+    
+	for(int i = 0; i < 10; i++ ) {
+		*(TYPE *)a = res_b / 2;
+		*(TYPE *)a = res_b * 2;
+		*(TYPE *)a = res_b + 1;
+    }
+}
+
+static void workerHeavyTwo(void* a, const void* b, const void*c) {
+	
+	TYPE res_b = b == NULL ? 0.0 : *(TYPE *)b;
+	TYPE res_c = c == NULL ? 0.0 : *(TYPE *)c;
+	
+	for(int i = 0; i < 10; i++ ) {
+		*(TYPE *)a = res_b / 2 + res_c / 2;
+		*(TYPE *)a = res_b * 2 + res_c * 2;
+		*(TYPE *)a = res_b + res_c;
+    }
 }
 
 //https://www.gnu.org/software/libc/manual/html_node/CPU-Time.html para colocar na bibliografia
@@ -71,11 +84,11 @@ unsigned long evalMap(void* src, void* dest, size_t nJob, size_t size, MODE mode
 
 	if( mode == SEQ) {
 		start = clock();
-		map_seq (dest, src, nJob, size, workerSleep);
+		map_seq (dest, src, nJob, size, workerHeavy);
 		end = clock();
 	} else if (mode == PAR) {
 		start = clock();
-		map (dest, src, nJob, size, workerSleep);
+		map (dest, src, nJob, size, workerHeavy);
 		end = clock();
 	} else {
 		return -1;
@@ -92,15 +105,15 @@ unsigned long evalReduce(void* src, void* dest, size_t nJob, size_t size, MODE m
 
 	if( mode == SEQ) {
 		start = clock();
-		reduce_seq (dest, src, nJob, size, workerAdd);
+		reduce_seq (dest, src, nJob, size, workerHeavyTwo);
 		end = clock();
 	} else if (mode == PAR) {
 		start = clock();
-		reduce (dest, src, nJob, size, workerAdd);
+		reduce (dest, src, nJob, size, workerHeavyTwo);
 		end = clock();
 	}else if(mode == ALT) {
 		start = clock();
-		tiled_reduce (dest, src, nJob, size, workerAdd, 3);
+		tiled_reduce (dest, src, nJob, size, workerHeavyTwo, 3);
 		end = clock();
 	} else {
 		return -1;
@@ -117,11 +130,11 @@ unsigned long evalScan(void* src, void* dest, size_t nJob, size_t size, MODE mod
 
 	if( mode == SEQ) {
 		start = clock();
-		scan_seq (dest, src, nJob, size, workerAdd);
+		scan_seq (dest, src, nJob, size, workerHeavyTwo);
 		end = clock();
 	} else if (mode == PAR) {
 		start = clock();
-		scan (dest, src, nJob, size, workerAdd);
+		scan (dest, src, nJob, size, workerHeavyTwo);
 		end = clock();
 	} else {
 		return -1;
@@ -239,9 +252,9 @@ unsigned long evalScatter(void* src, void* dest, size_t nJob, size_t size, MODE 
 
 unsigned long evalPipeline (void* src, void* dest, size_t nJob, size_t size, MODE mode) {
 	void (*pipelineFunction[])(void*, const void*) = {
-			workerMultTwo,
-			workerAddOne,
-			workerDivTwo
+			workerHeavy,
+			workerHeavy,
+			workerHeavy
 	};
 	int nPipelineFunction = sizeof (pipelineFunction)/sizeof(pipelineFunction[0]);
 
@@ -273,11 +286,11 @@ unsigned long evalFarm (void* src, void* dest, size_t nJob, size_t size, MODE mo
 
 	if( mode == SEQ) {
 		start = clock();
-		farm_seq (dest, src, nJob, size, workerAddOne, 3);
+		farm_seq (dest, src, nJob, size, workerHeavy, 3);
 		end = clock();
 	} else if (mode == PAR) {
 		start = clock();
-		farm (dest, src, nJob, size, workerAddOne, 3);
+		farm (dest, src, nJob, size, workerHeavy, 3);
 		end = clock();
 	} else {
 		return -1;
@@ -318,6 +331,7 @@ char *evalNames[] = {
 char *altNames[] = {
 		"",
 		"tiled_reduce",
+		"",
 		"",
 		"",
 		"",
@@ -471,7 +485,7 @@ void runTester(double*** results, size_t runs, size_t start, size_t n_steps, siz
 		for(size_t f = 0; f < nEvalFunctions; f++) {
 			//printf("Current pattern: %s\n", evalNames[f]);
 			for(size_t run = 0; run < runs; run++) {
-				printf("Size=%lu \t pattern=%s \t run=%lu/%lu \n", current_size, evalNames[f], run+1, runs);
+				// printf("Size=%lu \t pattern=%s \t run=%lu/%lu \n", current_size, evalNames[f], run+1, runs);
 
 				// Parallel
 				unsigned long t;
@@ -500,21 +514,21 @@ void runTester(double*** results, size_t runs, size_t start, size_t n_steps, siz
 	// Compute the average between the different runs
 	if( runs >= 1 ) {
 		for(size_t i = 0; i < n_steps; i++) {
-			size_t current_size = i*step + start;
-			printf("array size=%lu \t runs=%lu\n", current_size, runs );
-			printf("Pattern \t\t\t Sequential 	\t Parallel \t Parallel2\n");
+			// size_t current_size = i*step + start;
+			// printf("array size=%lu \t runs=%lu\n", current_size, runs );
+			// printf("Pattern \t\t\t Sequential 	\t Parallel \t Parallel2\n");
 			for(size_t j = 0; j < nEvalFunctions; j++){
 				for(size_t k = 0; k < 2; k++){
 					results[i][j][k] = results[i][j][k] / runs;
 				}
 
-				printf("%s \t\t\t %f us \t %f us", evalNames[j], results[i][j][SEQ], results[i][j][PAR]);
+				// printf("%s \t\t\t %f us \t %f us", evalNames[j], results[i][j][SEQ], results[i][j][PAR]);
 				if( results[i][j][PAR] > 0 ) {
-					printf( "\t %f us", results[i][j][PAR]);
+					// printf( "\t %f us", results[i][j][PAR]);
 				}
-				printf("\n");
+				// printf("\n");
 			}
-			printf("\n");
+			// printf("\n");
 		}
 	}
 }
