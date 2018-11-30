@@ -441,13 +441,13 @@ void saveResults(double*** results, size_t y_base, size_t step, size_t start, si
 /*void producePlotScript(char* filePattern, char* patternName, ) {
 
 }*/
-
+static size_t multStep = 0;
 static void processArgs(int argc, char** argv, size_t* runs, size_t* step, size_t* start, size_t* n_steps) {
 	int c;
 
 	opterr = 0;
 
-	while ((c = getopt(argc, argv, "r:s:i:n:")) != -1)
+	while ((c = getopt(argc, argv, "r:s:i:n:m:")) != -1)
 		switch (c) {
 		case 'r':
 			*runs = strtol (optarg, NULL, 10);;
@@ -461,8 +461,11 @@ static void processArgs(int argc, char** argv, size_t* runs, size_t* step, size_
 		case 'n':
 			*n_steps = strtol (optarg, NULL, 10);
 			break;
+		case 'm':
+			multStep = strtol (optarg, NULL, 10);
+			break;
 		case '?':
-			if (optopt == 'r' || optopt == 's' || optopt == 'i' || optopt == 'n' )
+			if (optopt == 'r' || optopt == 's' || optopt == 'i' || optopt == 'n' || optopt == 'm' )
 				fprintf(stderr, "Option -%c is followed a the number.\n", optopt);
 			/*else if (isprint(optopt))
 				fprintf(stderr, "Unknown option `-%c'.\n", optopt);*/
@@ -470,6 +473,14 @@ static void processArgs(int argc, char** argv, size_t* runs, size_t* step, size_
 				fprintf(stderr, "Unknown option character `\\x%x'.\n", optopt);
 			break;
 		}
+}
+
+size_t powerFun(size_t base, size_t exp) {
+	size_t res = 1;
+	for(size_t i = 0; i < exp; i++) {
+		res *= base;
+	}
+	return res;
 }
 
 TYPE* createRandomArray(size_t n) {
@@ -516,7 +527,11 @@ void freeResultsMatrix(double*** results, size_t n_steps, size_t functions) {
 void runTester(double*** results, size_t runs, size_t start, size_t n_steps, size_t step) {
 
 	for(size_t i = 0; i < n_steps; i++) {
-		size_t current_size = i*step + start;
+		size_t current_size;
+		if(multStep)
+			current_size = powerFun(step, i);
+		else
+			current_size = i*step + start;
 		//printf("Current_size: %lu\n", current_size);
 
 		TYPE* src = createRandomArray(current_size);
