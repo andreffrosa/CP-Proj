@@ -574,6 +574,15 @@ static void processArgs(int argc, char** argv, EVAL_TYPE* eval_type, size_t* run
 		}
 }
 
+size_t powerFun(size_t base, size_t exp) {
+	/*size_t res = 1;
+	for(size_t i = 0; i < exp; i++) {
+		res *= base;
+	}
+	return res;*/
+	return (size_t)pow((double)base, (double)exp);
+}
+
 double*** createResultsMatrix(size_t n_steps, size_t functions) {
 	double*** results = malloc( n_steps*sizeof(double**) );
 
@@ -601,10 +610,9 @@ void variableSizeTester(double*** results, EVAL_TYPE eval_type, size_t runs, siz
 	worker_weight = weight;
 
 	for(size_t i = 0; i < n_steps; i++) {
-
 		size_t current_size;
 		if( eval_type == EXP_SIZE)
-			current_size = (size_t)pow((double)step, (double)i) + start;
+			current_size = powerFun(step, i) + start;
 		else
 			current_size = i*step + start;
 		//printf("Current_size: %lu\n", current_size);
