@@ -490,19 +490,19 @@ void runTester(double*** results, size_t runs, size_t start, size_t n_steps, siz
 				// Parallel
 				unsigned long t;
 				t = evalFunction[f](src, dest, current_size, sizeof(TYPE), PAR);
-				// printf("parallel_%s %lu microseconds\n", evalNames[f], t);
+				printf("parallel_%s %lu microseconds\n", evalNames[f], t);
 
 				results[i][f][PAR] += t;
 
 				// Seq
 				t = evalFunction[f](src, dest, current_size, sizeof(TYPE), SEQ);
-				// printf("sequential_%s %lu microseconds\n", evalNames[f], t);
+				printf("sequential_%s %lu microseconds\n", evalNames[f], t);
 
 				results[i][f][SEQ] += t;
 
 				// Alternative
 				t = evalFunction[f](src, dest, current_size, sizeof(TYPE), ALT);
-				// printf("sequential_%s %lu microseconds\n", evalNames[f], t);
+				printf("sequential_%s %lu microseconds\n", evalNames[f], t);
 
 				results[i][f][ALT] += t;
 			}
@@ -514,21 +514,21 @@ void runTester(double*** results, size_t runs, size_t start, size_t n_steps, siz
 	// Compute the average between the different runs
 	if( runs >= 1 ) {
 		for(size_t i = 0; i < n_steps; i++) {
-			// size_t current_size = i*step + start;
-			// printf("array size=%lu \t runs=%lu\n", current_size, runs );
-			// printf("Pattern \t\t\t Sequential 	\t Parallel \t Parallel2\n");
+			size_t current_size = i*step + start;
+			printf("array size=%lu \t runs=%lu\n", current_size, runs );
+			printf("Pattern \t\t\t Sequential 	\t Parallel \t Parallel2\n");
 			for(size_t j = 0; j < nEvalFunctions; j++){
 				for(size_t k = 0; k < 2; k++){
 					results[i][j][k] = results[i][j][k] / runs;
 				}
 
-				// printf("%s \t\t\t %f us \t %f us", evalNames[j], results[i][j][SEQ], results[i][j][PAR]);
+				printf("%s \t\t\t %f us \t %f us", evalNames[j], results[i][j][SEQ], results[i][j][PAR]);
 				if( results[i][j][PAR] > 0 ) {
-					// printf( "\t %f us", results[i][j][PAR]);
+					printf( "\t %f us", results[i][j][PAR]);
 				}
-				// printf("\n");
+				printf("\n");
 			}
-			// printf("\n");
+			printf("\n");
 		}
 	}
 }
