@@ -453,7 +453,7 @@ but also because those primitives can be platform dependent and are highly heter
 %[Falar de que existem padrões paralelos, como tá no livro, para dizer que podem servir como building blocs de algortimos e assim] [meter citação para %https://www.usenix.org/legacy/event/hotpar10/tech/full_papers/McCool.pdf]
 
 
-On that account, we designed and implemented a library that contains some of the most well known parallel patterns.
+On that account, we designed and implemented a library that contains some of the most well known parallel patterns. [meter citação anteriror]
 This library provides an easy way to update already-built sequential programs to make use of the hardware parallel functionalities, allowing the application-level developer to integrate such patterns and give its application a boost of performance with little effort. We resorted to Intel's Cilk$^+$ to implement those patterns. [meter citação para os dreds] In order to be able to use it in a vast amount of use cases, these implementations are independent both from the data types they are manipulating and the parallel functionalities provided by each specific hardware platform. We developed each algorithm to try to achieve the maximum possible parallel slack and ... [mudar um bocado isto]
 
 
@@ -521,6 +521,31 @@ To evaluate the performance of our algorithms, we built a tester application tha
 
 \subsection{Experimental Results}
 
+
+
+
+\begin{figure}[h!]
+  \centering
+  \setlength\tabcolsep{0.01pt}
+  %\renewcommand{\arraystretch}{0.5}
+  \begin{tabular}{cc}
+
+    \includegraphics[width=0.265\textwidth]{plots/Map.eps} & \includegraphics[width=0.265\textwidth]{plots/Reduce.eps}\\
+    \includegraphics[width=0.265\textwidth]{plots/Pack.eps} & \includegraphics[width=0.265\textwidth]{plots/Split.eps}\\
+    \includegraphics[width=0.265\textwidth]{plots/Gather.eps} & \includegraphics[width=0.265\textwidth]{plots/Scatter.eps}\\
+    \includegraphics[width=0.265\textwidth]{plots/Pipeline.eps} & \includegraphics[width=0.265\textwidth]{plots/Farm.eps}\\
+    \multicolumn{2}{c}{\includegraphics[width=0.265\textwidth]{plots/Scan.eps}}\\
+
+    %(a) Map & (b) Reduce\\
+    %\includegraphics[width=0.25\textwidth]{plots/Map_heavy.eps} & \includegraphics[width=0.25\textwidth]{plots/Pipeline.eps}\\
+    %(a) MapHeavy & (b) Pipeline\\
+   %\includegraphics[width=65mm]{it} &   \includegraphics[width=65mm]{it} \\
+  %(c) third & (d) fourth \\[6pt]
+  %\multicolumn{2}{c}{(e) fifth}
+  \end{tabular}
+\caption{Latency of the algorithms.} \label{latency}
+\end{figure}
+
 The Figure~\ref{latency} has the results obtained, for each algorithm, on the experiments.
 
 Análise comparatória da performance dizendo porque correu bem e porque correu mal para cada um.
@@ -531,7 +556,6 @@ Podiamos medir a difenreça entre a paralela e a sequencial dividdo e assim tinh
 The conclusion goes here.
 
 \section*{Acknowledgments}
-
 
 The authors would like to thank...
 
