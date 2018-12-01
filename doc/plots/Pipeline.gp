@@ -9,12 +9,12 @@ set title "Pipeline"
 
 set datafile separator ";"
 
-set xlabel "array size (x10 000)"
-set ylabel "latency (us)"
+set xlabel "job count (x1 000)"
+set ylabel "latency (seconds)"
 set key top left
-set style data linespoints 
+set style data linespoints
 set grid
 
-plot "Pipeline.csv" using ($1):($2) ti col lw 3, '' u ($1):($3) ti col lw 3, '' u ($1):($4) ti col lw 3,
+plot "Pipeline.csv" using ($1/1000):($2/1000000) ti col lw 10, '' u ($1/1000):($3/1000000) ti col lw 10, '' u ($1/1000):($4/1000000) ti col lw 10 lt 4,
 
 set output

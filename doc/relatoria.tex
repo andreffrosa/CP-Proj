@@ -519,20 +519,24 @@ To evaluate the performance of our algorithms, we built a tester application tha
 
 \begin{figure}[h!]
   \centering
-  \setlength\tabcolsep{0.2pt}
+  \setlength\tabcolsep{0.01pt}
   %\renewcommand{\arraystretch}{0.5}
   \begin{tabular}{cc}
 
-    \includegraphics[width=0.25\textwidth]{plots/Map.eps} & \includegraphics[width=0.25\textwidth]{plots/Farm.eps}\\
-    (a) Map & (b) Farm\\
-    \includegraphics[width=0.25\textwidth]{plots/Map_heavy.eps} & \includegraphics[width=0.25\textwidth]{plots/Pipeline.eps}\\
-    (a) MapHeavy & (b) Pipeline\\
+    \includegraphics[width=0.265\textwidth]{plots/Map.eps} & \includegraphics[width=0.265\textwidth]{plots/Reduce.eps}\\
+    \includegraphics[width=0.265\textwidth]{plots/Pack.eps} & \includegraphics[width=0.265\textwidth]{plots/Split.eps}\\
+    \includegraphics[width=0.265\textwidth]{plots/Gather.eps} & \includegraphics[width=0.265\textwidth]{plots/Scatter.eps}\\
+    \includegraphics[width=0.265\textwidth]{plots/Pipeline.eps} & \includegraphics[width=0.265\textwidth]{plots/Farm.eps}\\
+    \multicolumn{2}{c}{\includegraphics[width=0.265\textwidth]{plots/Scan.eps}}\\
+
+    %(a) Map & (b) Reduce\\
+    %\includegraphics[width=0.25\textwidth]{plots/Map_heavy.eps} & \includegraphics[width=0.25\textwidth]{plots/Pipeline.eps}\\
+    %(a) MapHeavy & (b) Pipeline\\
    %\includegraphics[width=65mm]{it} &   \includegraphics[width=65mm]{it} \\
   %(c) third & (d) fourth \\[6pt]
   %\multicolumn{2}{c}{(e) fifth}
   \end{tabular}
-
-\caption{ Patterns.} \label{latency}
+\caption{Latency of the algorithms.} \label{latency}
 \end{figure}
 
 The Figure~\ref{latency} has the results obtained, for each algorithm, on the experiments.
@@ -545,7 +549,6 @@ Podiamos medir a difenreça entre a paralela e a sequencial dividdo e assim tinh
 The conclusion goes here.
 
 \section*{Acknowledgments}
-
 
 The authors would like to thank...
 
