@@ -440,18 +440,26 @@ Parallel Algorithms, Cilk$^+$
 
 \section{Introduction}
 
-Nowadays, the parallel paradigm is a matter of great importance. Every day the amount of data to be
-processed grows [meter uma citação], as well as the demand for efficient programs that produce results faster and efficiently.
-Hardware performance has also evolved \textemdash processor architecture has switching from building bigger and
-clockwise faster to have more cores and threads.
-For these reasons, build highly concurrent programs is essential to achieve good levels of scability and letency.
-\par However, code such programs can be very difficult, not only because they make use of low level primitives,
-but also because those primitives can be platform dependent.
-Therefore (outra palavra para nao ser igual?), we builded a library that implements well known parallel patterns
-that allow the application-level developer to integrate such patterns and give its application a
-boost of permormance with little to no difficulty.
-We did our best to keep the library independent from the system and the applications.
-So, all of our implementations are independent from data types (all of out functions recieve data as void* ), and independent from the machine's system parallel low-level intressencts (we make use of Intel's Cilk library to manage and deploy the number of threads needed to excute a given task).
+Nowadays, the parallel paradigm is a matter of great importance, and the demand for more scalabel and efficient data processing algorithms has increased. [dizer um pouco mais]
+
+In the one hand, the amount of data produced every day grows exponentially [meter uma citação], requiring more computational power to process it at the same speeds.
+
+%Falar da lei de moore (?) e dizer que existem limitações ao poder de processamento sequencial.
+On the other hand, with [limitações da evolução sequencial]  from becoming smaller (to reduce the communication latency between transistors) and increasing the clock rate. Thus, the evolution of the processors architecture switched to have more parallel functionalities, such as multiple cores and hardware threads as well as vector operations, that allow the simultaneously execution of processes and parallel manipulation of multiple data.
+
+For these reasons, it's crucial to take advantage of these features to build algorithms that allow the processing of such huge amounts of data, having good levels of scalability and latency. However, build such algorithms can be a very difficult and complex task, not only because they have to make use of the previous low level parallel primitives,
+but also because those primitives can be platform dependent and are highly heterogeneous, e.g., not all the processors provide vector operations and hardware threads and the amount of cores [varia bastante].
+
+%[Falar de que existem padrões paralelos, como tá no livro, para dizer que podem servir como building blocs de algortimos e assim] [meter citação para %https://www.usenix.org/legacy/event/hotpar10/tech/full_papers/McCool.pdf]
+
+
+Therefore (outra palavra para nao ser igual?), we designed and implemented a library that contains some of the most well known parallel patterns.
+This library provides an easy way to update already-built sequential programs to make use of the hardware parallel functionalities, allowing the application-level developer to integrate such patterns and give its application a boost of performance with little effort. We resorted to Intel's Cilk$^+$ to implement those patterns. [meter citação para os dreds] In order to be able to use it in a vast amount of use cases, these implementations are independent both from the data types they are manipulating and the parallel functionalities provided by each specific hardware platform. We developed each algorithm to try to achieve the maximum possible parallel slack and ... [mudar um bocado isto]
+
+
+
+%We did our best to keep the library independent from the system and the applications.
+%So, all of our implementations are independent from data types (all of out functions recieve data as void* ), and independent from the machine's system parallel low-level %intressencts (we make use of Intel's Cilk library to manage and deploy the number of threads needed to excute a given task).
 
 %\par As said before, the parallel paradigm is now a matter of great importance. Every day the amount of data to be
 %proce ssed grows, as well as the demand for efficient programs that produce results faster and efficiently.
