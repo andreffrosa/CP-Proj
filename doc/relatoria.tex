@@ -474,34 +474,56 @@ This library provides an easy way to update already-built sequential programs to
 %We did our best to keep the library independent from the system and the applications.
 %So, all of our implementations are independent from data types and specific concurrent
 
-
-
-(... alguma cena para ligar)
-
-
 \section{Architecture}
+
+Our library has the following patterns implemented: Map, Reduce, Scan, Pack, Split, Gather, Scatter, Pipeline and Farm. [citação para os patterns]
+
+\subsection{Map}
+O que dizer aqui?
+
+\subsection{Reduce}
+Explicar brevemente o que é
+We implemented 2 versions of reduce: (regular) reduce and tiled reduce.
+Explicar a difenreça
+Explicar que quisemos aumentar oa máximo parallel slack e por isso quando o array de ouptu é grande este é continuamente dividido na versaõ tiled até ter um tamanho minimo. Formando uma árvore n-ária em vez de binária.
+Explicar a técnica dos dois arrays para fazer a árvore de execução mas sem a armazenar toda em memória e poupar espaço sem ter apontadores para os pais e filhos, etc.
+
+\subsection{Scan}
+
+\subsection{Pack}
+
+\subsection{Split}
+Função extra(secalhar dizer isto lá em cima)
+
+\subsection{Gather}
+
+\subsection{Scatter}
+
+\subsection{Pipeline}
+
 
 \section{Implementation}
 
 \section{Experimental Evaluation}
+In this Section we present an experimental evaluation of the implemented parallel algorithms, comparing their performance against their sequential version.
 
 \subsection{Experimental Setting}
 
+To evaluate the performance of our algorithms, we built a tester application that, for each algorithm, runs each of its versions (parallel, sequential and alternative, when there is one) one after the other a parameterizable amount of times, in order to compute the average of their results and thus filter the noise introduced by the ... . For each algorithm we measured its latency for multiple amount of jobs and its latency for a fixed amount of jobs, with variable computation work. In order to count the elapsed time between the start and finish of the algorithm, we resort to a system call [citar] that returns the amount of the process CPU time, and thus not counting the time when the process is interrupted by the OS's process scheduler, giving more accurate results for the latency. The units utilized are microseconds (us). We run the experiments on node9, a computer with 16 cores and .... .
+
+
 \subsection{Experimental Results}
+
+The Figure~\ref{latency} has the results obtained, for each algorithm, on the experiments.
+
+Análise comparatória da performance dizendo porque correu bem e porque correu mal para cada um.
+Análise geral, comparando a performance dos vaŕios uns cons os outros. Ex o map é o que aprenseta melhores resultados comparativamente à versão sequencial, bla bla
+Podiamos medir a difenreça entre a paralela e a sequencial dividdo e assim tinhamos um valor que ea comparável com os outro salgoritmos
 
 \section{Conclusion}
 The conclusion goes here.
 
-% conference papers do not normally have an appendix
-
-% use section* for acknowledgment
-\ifCLASSOPTIONcompsoc
-  % The Computer Society usually uses the plural form
-  \section*{Acknowledgments}
-\else
-  % regular IEEE prefers the singular form
-  \section*{Acknowledgment}
-\fi
+\section*{Acknowledgments}
 
 
 The authors would like to thank...
