@@ -337,6 +337,7 @@
 % Do not put math or special symbols in the title.
 \title{Concurrency and Parallelism\\ Cilk$^+$ Parallel Patterns Implementation }
 
+
 %\institute{DI - FCT - NOVA University of Lisbon}
 
 % author names and affiliations
@@ -387,27 +388,34 @@ rfc.silva@campus.fct.unl.pt}}
 %Telephone: (800) 555--1212, Fax: (888) 555--1212}
 %\IEEEauthorblockA{\IEEEauthorrefmark{4}Tyrell Inc., 123 Replicant Street, Los Angeles, California 90210--4321}}
 
-
+% make the title area
+\maketitle
 
 
 % use for special paper notices
 %\IEEEspecialpapernotice{(Invited Paper)}
 
 
-
-
-% make the title area
-\maketitle
+%\markboth{Journal of \LaTeX\ Class Files,~Vol.~14, No.~8, August~2015}%
+%{Shell \MakeLowercase{\textit{et al.}}: Bare Demo of IEEEtran.cls for Computer Society Journals}
 
 % As a general rule, do not put math, special symbols or citations
 % in the abstract
+%\IEEEtitleabstractindextext{
 \begin{abstract}
-%In the following document we will describe the reasoning behind
-The parallel computation paradigm has been emerging, as a consequence to the huge growth on the amount of data that needs to be processed and analyzed, and to switching of processors architecture from being smaller and clockwise fast to have parallel functionalities, such as more cores, hardware threads and vector operations. Therefore, it is imperative to build algorithms that explore these functionalities and allow to process such huge amounts of data.
-However, making use of these functionalities to build algorithms can sometimes be a difficult and complex task, due to them being low level primitives and sometimes platform dependent. Thus, parallel functions and libraries can provide an easy and generic way to better utilize these resources, when available. Therefore, we developed a parallel patterns library, that implements some of the most well known parallel patterns, and that can be easily integrated in any already existing sequential program, to improve its efficiency. In order to be able to be used in a vast amount of use cases, these implementations are independent both from the data types they are manipulating and the parallel functionalities provided by each specific hardware platform.
+In recent years, the parallel computation paradigm has been emerging, as a consequence to: the huge growth on the amount of data that needs to be processed and analyzed, and to the switching of processors' architecture evolution process from becoming smaller and having faster clock speeds, to integrate parallel functionalities, such as multiple cores, hardware threads and vector operations. Therefore, it is imperative to build algorithms that explore these functionalities
+%and, at the same time, allow
+to increase the efficiency on processing such huge amounts of data.
+However, building algorithms on top of these functionalities can sometimes be a difficult and complex task, due to them being low level primitives and sometimes platform dependent. Thus, parallel functions and libraries can provide an easy and generic way to better utilize these resources, when available. Therefore, we developed a
+%parallel patterns
+library, that implements some of the most well known parallel patterns, and that can be easily integrated in any already existing sequential program, to improve its efficiency.
+We developed each algorithm to try to achieve the maximum possible parallel slack and ...
+
+In order to be able to use it in a vast amount of use cases, these implementations are independent both from the data types they are manipulating and the parallel functionalities provided by each specific hardware platform.
 
 What was our approach?
-What were the results? What did you learn?
+What were the results?
+What did you learn?
 
 Finally, we conducted a preliminary experimental evaluation on the performance of the different implemented alternatives, comparing them with their corresponding sequential version, that showed ... .
 
@@ -419,14 +427,15 @@ Finally, we conducted a preliminary experimental evaluation on the performance o
 %switching from building bigger and clockwise fast to have more cores and threads.
 %All these changes are a big motivation to build and take parallel programming has a standard.
 %/par We were proposed to implement a series of well know parallel patterns in the most efficient way as possible.
-
-
 %(o que aprendemos, iventem ai qql coisa)...
 
 \end{abstract}
 
 \IEEEpeerreviewmaketitle
 
+\begin{IEEEkeywords}
+Parallel Algorithms, Cilk$^+$
+\end{IEEEkeywords}%}
 
 
 \section{Introduction}
