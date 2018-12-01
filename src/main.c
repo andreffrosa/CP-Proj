@@ -17,12 +17,10 @@ static long long wall_clock_time(void) {
     return tv.tv_sec * 1e6 + tv.tv_usec;
 }
 
-
-
 int main(int argc, char* argv[]) {
     int i, N;
     long long start, end;
-    
+
 
     int c;
     while ((c = getopt (argc, argv, "d")) != -1)
@@ -35,7 +33,7 @@ int main(int argc, char* argv[]) {
     }
     argc -= optind;
     argv += optind;
-    
+
     if (argc != 1) {
         printf("Usage: ./example N\n");
         return -1;
@@ -53,12 +51,12 @@ int main(int argc, char* argv[]) {
         src[i] = drand48();
 		// src[i] = i + 1;
     printf ("Done!\n");
-    
+
     printDouble (src, N, "SRC");
     if (debug) {
         printf ("\n\n");
 	}
-	
+
 	for (int i = 0;  i < nTestFunction;  i++) {
         start = wall_clock_time();
         testFunction[i] (src, N, sizeof(*src));
@@ -67,7 +65,7 @@ int main(int argc, char* argv[]) {
         if (debug)
             printf ("\n\n");
     }
-	
+
 	free(src);
 
     return 0;
