@@ -425,27 +425,26 @@ Finally, we conducted a preliminary experimental evaluation on the performance o
 
 \end{abstract}
 
-% no keywords
-
-
-
-
-% For peer review papers, you can put extra information on the cover
-% page as needed:
-% \ifCLASSOPTIONpeerreview
-% \begin{center} \bfseries EDICS Category: 3-BBND \end{center}
-% \fi
-%
-% For peerreview papers, this IEEEtran command inserts a page break and
-% creates the second title. It will be ignored for other modes.
 \IEEEpeerreviewmaketitle
 
 
 
 \section{Introduction}
-\par As said before, the parallel paradigm is now a matter of great importance.
-Build highly efficient and concurrent
-programs is essential to achieve good levels of scability and letency.
+\par As said before, the parallel paradigm is now a matter of great importance. Every day the amount of data to be
+proce ssed grows, as well as the demand for efficient programs that produce results faster and efficiently.
+Hardware performance has also evolved \textemdash processor architecture has switching from building bigger and
+clockwise faster to have more cores and threads.
+For these reasons, build highly concurrent programs is essential to achieve good levels of scability and letency.
+\par However, code such programs can be very difficult, not only because they make use of low level primitives,
+but also because those primitives can be platform dependent.
+Therefore (outra palavra para nao ser igual?), we builded a library that implements well known parallel patterns
+that allow the application-level developer to integrate such patterns and give its application a
+boost of permormance with little to no difficulty.
+We did our best to keep the library independent from the system and the applications.
+So, all of our implementations are independent from data types and specific concurrent
+
+
+
 (... alguma cena para ligar)
 
 
