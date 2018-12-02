@@ -497,12 +497,12 @@ Thus, we decided to implement an alternative version for the reduce - tiled redu
 The scan pattern
 
 \subsection{Pack}
-The pack pattern is used to eliminate wasted space in a
+The Pack pattern is used to eliminate wasted space in a
 sparse collection and to handle variable-rate output from a
 map. From within map, each function activation is allowed to
 either keep or discard its outputs. The survivors are then
 packed together into a single collection.
-We consider make our own algorithm to solve pack but bucause it was not as efficient
+We consider make our own algorithm to solve pack but because it was not as efficient
 as the algorithm proposed by [those dudes] so we opted to implement that algorithm.
 
 \subsection{Split}
@@ -517,7 +517,7 @@ efficient.
 \subsection{Scatter}
 
 \subsection{Pipeline}
-The pipeline pattern represents the sequential application of multiple operators (or stages) at the same element. Due to having multiple operators, they can be applied in parallel at different elements. However, having only one element at each stage can be too slow and thus, we implemented an alternative parallel version of pipeline - pipeline farm, that have multiple elements being processed at each stage in parallel and thus increase the throughtput of the algorithm. This alternative version results from the combination of the Pipeline and Farm parallel patterns.
+The Pipeline pattern represents the sequential application of multiple operators (or stages) at the same element. Due to having multiple operators, they can be applied in parallel at different elements. However, having only one element at each stage can be too slow and thus, we implemented an alternative parallel version of pipeline - pipeline farm, that have multiple elements being processed at each stage in parallel and thus increase the throughtput of the algorithm. This alternative version results from the combination of the Pipeline and Farm parallel patterns.
 
 %However, for the same reasons as reduce, the weight of each operator might be too small compared to the parallel overhead that it's not worth to use the parallel version. Thus, we also developed an alternative version for pipeline - pipeline farm, that consists in group elements in batches, and process it seq [não sei que mais dizer]
 
