@@ -489,12 +489,17 @@ the worker (operator) is applied in parallel to each pair. This process is repea
 However, the weight of the application of the operators may be so small compared to the parallel overhead, that it does not pay to use the parallel version.
 Thus, we decided to implement an alternative version for the reduce - tiled reduce, which groups several elements of the collection in a tile, instead of only two, and executes the sequential version for each in parallel.
 
+problem of semi
+-
+associative operations
+such as floating point arithmetic.
+
 %Explicar que quisemos aumentar oa máximo parallel slack e por isso quando o array de ouptu é grande este é continuamente dividido na versaõ tiled até ter um tamanho minimo. Formando uma árvore n-ária em vez de binária.
 %Explicar a técnica dos dois arrays para fazer a árvore de execução mas sem a armazenar toda em memória e poupar espaço sem ter apontadores para os pais e filhos, etc.
 
 \subsection{Scan}
 
-The scan pattern
+The Scan pattern
 
 \subsection{Pack}
 The Pack pattern is used to eliminate wasted space in a
@@ -513,6 +518,10 @@ most efficient implementation we developed a more direct algorithm to improves l
 efficient.
 
 \subsection{Gather}
+
+The Gather pattern takes a collection and a sequence of indices in the previous collection and produces a collection composed by the elements of the input collection that corresponde to the index on that position. Since only multiple reads can happen on the same element simultaneously, then each element of the index sequence can be processed in parallel. We implemented this pattern resorting to the Map pattern, where the worker function corresponds to reading the element at the given index from the input collection and writing it in the corresponding slot in the sequence.
+
+[Está um bocado mal explicado]
 
 \subsection{Scatter}
 
