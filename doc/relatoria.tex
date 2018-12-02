@@ -489,21 +489,18 @@ Split can obviously be implemented by running pack twice and then merging the re
 
 \subsection{Gather}
 
-The Gather pattern takes a collection (input) and a sequence of indices (filter)  then it produces a collection (output)
-composed by the elements of the input collection in a way that the output[i] = input[ filter[ i ] ].
-Since only multiple reads can happen on the same element simultaneously, then each element of the index sequence can be processed in parallel.
-We implemented this pattern resorting to the Map pattern, where the worker function corresponds to reading the element at the given index from the input collection and writing it in the corresponding slot in the sequence.
+The Gather pattern takes a input collection and a sequence of indexes, producing a output collection,
+that for each element in the index sequence, it inserts at that position, the value of the input collection that is at that index value. Thus, the size of the output collection is exactly the same as the size of the index sequence.
+
+Since only multiple reads can happen on the same element simultaneously (no data races), each element of the index sequence can be processed in parallel.
+Therefore, we implemented this pattern resorting to the Map pattern, where the worker function reads the element at the given index from the input collection and writs it in the corresponding position on the output sequence.
 
 \subsection{Scatter}
 
-The Scatter pattern is the inverse of gather. It also takes an input collection (input) and a sequence of indices (filter) in the previous collection and puts
- the element input[i] at index[i] in the output collection. There is a problem with this pattern that is if the index collection
- has repeated elements then data races occur.
-  In our implementation, we left that verification to the user of the pattern because it would add too much weight
-   to the operation and we think it should be a concern of the program that uses the function and not the function itself (pre-condition).
-  We implemented this pattern resorting to map, where the worker copies the value in the position i of the input array to position index[i] in the output array.
-
-[Está um bocado mal explicado]
+The Scatter pattern is the inverse of Gather. It also takes an input collection and a sequence of indexes. However, instead of reading the corresponding input elements referenced by the indexes, it writes the input value at that index, in the output sequence.
+Consequently, there is a problem with this pattern when there are repeated elements in the index sequence, leading to data races.
+In our implementation, we left that verification to the user of the pattern because it would add too much weight to the operation and we think it should be a concern of the program that uses the function and not the function itself (pre-condition).
+We also implemented this pattern resorting to Map, where the worker copies the value in the position i of the input array to position contained at the position i of the index array, to the output array.
 
 \subsection{Pipeline}
 The Pipeline pattern represents the sequential application of multiple operators (or stages) at the same element, being very similar to an assembly line. Due to having multiple operators, they can be applied in parallel to different elements.
@@ -569,12 +566,12 @@ TLB size of 1024 4K pages; and 27 GB of RAM. The results of these experiments ar
 
 The Figure~\ref{latency} has the results obtained, for each algorithm, on the experiments.
 
-Análise comparatória da performance dizendo porque correu bem e porque correu mal para cada um.
-Análise geral, comparando a performance dos vaŕios uns cons os outros. Ex o map é o que aprenseta melhores resultados comparativamente à versão sequencial, bla bla
-Podiamos medir a difenreça entre a paralela e a sequencial dividdo e assim tinhamos um valor que ea comparável com os outro salgoritmos
+%Análise comparatória da performance dizendo porque correu bem e porque correu mal para cada um.
+%Análise geral, comparando a performance dos vaŕios uns cons os outros. Ex o map é o que aprenseta melhores resultados comparativamente à versão sequencial, bla bla
+%Podiamos medir a difenreça entre a paralela e a sequencial dividdo e assim tinhamos um valor que ea comparável com os outro salgoritmos
 
 \subsubsection{Scatter}
-The parallel version of the Scatter pattern shows a noticeable worse computational performance when compared to its sequential counterpart as seen in Figure~\ref{latency}. This difference in performance seems counterintuitive, since parallel Scatter, being embarrassingly parallel (is trivially divided into parallel tasks), is implemented in the same way as the parallel Map pattern. Indeed, theoretically, the parallel Scatter should execute in less time than sequential Scatter. The cause for this result lies in the hardware, more specifically in the hardware memory caches. In a multi-processor system, each processor has its own individual cache (Level 1 cache), and they all share a common, slower cache (Last Level Cache). Everytime a processor reads a value from memory, a block of memory, representig the entire neighborhood of that value, is brought into the common cache, and the into the processor's individual cache. If one processor writes into a value stored in its individual cache, the entire block to which the value belongs, is marked as \emph{dirty}, meaning it has been altered. If any other processor contains the dirty block in its individual cache (even if it does not intend to access the dirty value specifically), that block is invalidated, and must be reloaded from memory. The act of reloading a block from memory is very slow when compared to a cpu's clock cycle, and induces slowdown on the execution of a program. The more processors there are, accessing and writing to the same memory blocks, the more noticeable the effects of cache invalidation across the execution of a program. We used the tool \emph{perf} to extract data about cache accesses, for both the parallel and sequential Scatter implementations. We observed a large increase in the number of accesses to the last level cache for the parallel implementation when compared to the sequential implementation. Indeed, an execution of parallel Scatter accessed, on average 40 times more to the last level cache than an execution of the sequential version for the same input. This is evidence of cache invalidation, which is the main factor behind the results observed.
+The parallel version of the Scatter pattern shows a noticeable worse computational performance when compared to its sequential counterpart as seen in Figure~\ref{latency}. This difference in performance seems counter intuitive, since parallel Scatter, being embarrassingly parallel (is trivially divided into parallel tasks), is implemented in the same way as the parallel Map pattern. Indeed, theoretically, the parallel Scatter should execute in less time than sequential Scatter. The cause for this result lies in the hardware, more specifically in the hardware memory caches. In a multi-processor system, each processor has its own individual cache (Level 1 cache), and they all share a common, slower cache (Last Level Cache). Every time a processor reads a value from memory, a block of memory, representing the entire neighborhood of that value, is brought into the common cache, and the into the processor's individual cache. If one processor writes into a value stored in its individual cache, the entire block to which the value belongs, is marked as \emph{dirty}, meaning it has been altered. If any other processor contains the dirty block in its individual cache (even if it does not intend to access the dirty value specifically), that block is invalidated, and must be reloaded from memory. The act of reloading a block from memory is very slow when compared to a cpu's clock cycle, and induces slowdown on the execution of a program. The more processors there are, accessing and writing to the same memory blocks, the more noticeable the effects of cache invalidation across the execution of a program. We used the tool \emph{perf} to extract data about cache accesses, for both the parallel and sequential Scatter implementations. We observed a large increase in the number of accesses to the last level cache for the parallel implementation when compared to the sequential implementation. Indeed, an execution of parallel Scatter accessed, on average 40 times more to the last level cache than an execution of the sequential version for the same input. This is evidence of cache invalidation, which is the main factor behind the results observed.
 
 \subsubsection{Gather}
 The parallel version of the Gather pattern shows an improvement in terms of latency when compared to its sequential counterpart as seen in Figure~\ref{latency}. This is to be expected, since parallel Gather is implemented in a similar to to parallel Map, maximizing potential parallelism. Since Gather only performs reads, there is no danger of cache invalidation as with parallel Scatter, which means the cache memories are used to their fullest extent, increasing its performance. In fact, since Gather executes so quickly, we had trouble getting accurate execution time values for input sizes under 80000.
@@ -583,16 +580,16 @@ The parallel version of the Gather pattern shows an improvement in terms of late
 The parallel version of the Scan pattern shows an improvement in terms of latency when compared to its sequential counterpart as seen in Figure~\ref{latency}. 
 
 \section{Conclusion} \label{Conclusion}
-The conclusion goes here.
+After making this project we take some lessons with us. We now really understand that building parallel programs can be a very difficult task, serial implementations of a given pattern sometimes are just impossible to parallelize due to various dependencies along the code, so it is necessary to 'think out of the box' and create algorithms completely different from the serial ones.
 
-\section*{Acknowledgments}
+%\section*{Acknowledgments}
 
-The authors would like to thank...
+%The authors would like to thank...
 
 %https://www.gnu.org/software/libc/manual/html_node/CPU-Time.html para colocar na bibliografia
 
 
-\section*{Comments}
+%\section*{Comments}
 
 
 % trigger a \newpage just before the given reference
