@@ -477,11 +477,13 @@ The Map pattern consists on the independent application of the same function (or
 However, sometimes the computational weight of the function might be too small in comparison to the overhead of parallelizing their execution, leading to worst results than utilizing the sequential version. Thus, to overcome this problem, the elements of the collection can be grouped in batches, which are processed in parallel, and, within each batch, their elements are processed sequentially. The size of each batch is called \emph{Grain Size} and the separation in groups is called \emph{Granularity}. We implement our map following that behavior.
 
 \subsection{Reduce}
-The Reduce pattern consists on applying a pairwise associative operation (e.g. Add, Multiply) to all the elements of a collection, producing a single element. Since the operation is associative, multiple applications (to different elements) can be done in parallel. The execution of the parallel version of these pattern produces a binary tree, where the child nodes are the operands and the parent is the result of the operation, being that the result of REduce corresponds to the root of this tree.
+The Reduce pattern consists on applying a pairwise associative operation (e.g. Add, Multiply) to all the elements of a collection, producing a single element. Since the operation is associative, multiple applications (to different elements) can be done in parallel. The execution of the parallel version of these pattern produces a binary tree, where the child nodes are the operands and the parent is the result of the operation, being that the result of reduce corresponds to the root of this tree.
 
 In our library, we decided to implemented two versions of reduce: (regular) reduce and tiled reduce. In regular reduce, the elements of the collection are paired and the worker (operator) is applied in parallel to each pair. This process is repeated to their results until there is only one element, the reduce result.
 However, the weight of operator may be too small compared to the parallelization overhead, that it does not pay to use the parallel version.
 Thus, we decided to implement the alternative version, tiled reduce, which groups several elements of the collection in a tile, instead of only two. This tiles are then processed in parallel, being that for each one, a sequential version of reduce is executed.
+
+[Secalhar explicar mais em detalhe a nossa implementação]
 
 %problem of semi
 %-
@@ -493,8 +495,10 @@ Thus, we decided to implement the alternative version, tiled reduce, which group
 
 \subsection{Scan}
 
-The Scan pattern is very similar to the Reduce pattern with the difference that the output is a sequence of the results of all the intermediate operations and not just the last result. This sequence is ordered in the sense that the element in position i of the results from applying the operator to the element in position i-1 with the element of position i of the input collection.
-We tried to develop our own implementation of scan, however, we decided to use this [Citação], because it is better. [mudar este discurso]
+The Scan pattern is very similar to the Reduce pattern with the difference that the output the sequence of results of all the intermediate operations and not just the last result. The order of the sequence must be the same as the order of the sequential version.
+
+%We tried to develop our own implementation of scan, however, we decided to use this [Citação], because it is better. [mudar este discurso]
+We decide to implement this version of Scan [citar].
 
 Briefly, this algorithm first builds a tree with a bottom-up approach, similar to reduce, where the results of the intermediate operations are computed pairwise. Then, it traverses the tree top-down, passing to the left child the value inherited from its parent (the neutral element of the operation in the case of the root) and to the right child the result of applying the operator to the value inherited with the result of the intermediate computation of its left brother. In it reaches the leaves, the value to insert in the output collection corresponds to applying the operator to the inherited value and its own intermediate value.
 
@@ -503,9 +507,13 @@ Briefly, this algorithm first builds a tree with a bottom-up approach, similar t
 [Está um bocado mal explicado]
 
 \subsection{Pack}
-The Pack pattern takes an collection and a binary mask, and returns the collection where only the elements of the input collection whose mask value was True (Without space between the elements).
+
+The Pack pattern consists on removing elements from a collection, keeping the remaining elements at contiguous positions, i.e., without unused space between them. The elements to remove (or to keep) are identified through a binary mask or a filter function function.
+
 This pattern is generally used to eliminate wasted space in a sparse collection and to handle variable-rate output from a map (or other patterns), where the worker is allowed to either keep or discard its outputs.
-We consider design our own algorithm to implement Pack, however, the version proposed in the classes was more efficient, and thus we opted to implement that instead. That version resorts to Scan to compute a the sum of the mask (bitsum) elements giving for each True element of the mask the corresponding position in the output collection. Then, a map operation is applied that for all the elements of the input collection that have True in the corresponding mask position, insert at the position given by the bitsum (for the current element) in the output collection. This implementation have work O(n) and span O(log n).
+We considered designing our own algorithm to implement Pack, however, the version proposed in the classes was more efficient, and thus we opted to implement that instead. That version resorts to Scan to compute the sum of the mask elements, originating the bitsum. That sequence, gives, for each true element on the mask, the corresponding input's element position in the output collection. Then, a map is applied to the bitsum with a worker that for each true element of the mask, inserts the corresponding element of the input collection into the output collection, in the position defined by the corresponding bitsum.
+
+This implementation have work O(n) and span O(log n). [melhorar isto]
 
 \subsection{Split}
 The Split\footnote[1]{Optional Extra Pattern} pattern is a variant of pack which does not discard elements but instead packs them to the top or bottom of the output collection.
