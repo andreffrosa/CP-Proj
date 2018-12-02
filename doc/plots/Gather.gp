@@ -15,6 +15,6 @@ set key top left
 set style data linespoints
 set grid
 
-plot "Gather.csv" using ($1/1000):($2/1000000) ti col lw 10, '' u ($1/1000):($3/1000000) ti col lw 10,
+plot "Gather.csv" using ($1/1000):($2/1000) ti col lw 10, '' u ($1/1000):($3/1000) ti col lw 10,
 
 set output
