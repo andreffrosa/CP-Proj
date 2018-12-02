@@ -500,16 +500,18 @@ Split can obviously be implemented by running pack twice and then merging the re
 \subsection{Gather}
 
 The Gather pattern takes a collection (input) and a sequence of indices (filter)  then it produces a collection (output)
-composed by the elements of the input collection in a way that the output[i] = input[ filter[ i ] ]. 
+composed by the elements of the input collection in a way that the output[i] = input[ filter[ i ] ].
 Since only multiple reads can happen on the same element simultaneously, then each element of the index sequence can be processed in parallel.
 We implemented this pattern resorting to the Map pattern, where the worker function corresponds to reading the element at the given index from the input collection and writing it in the corresponding slot in the sequence.
 
-
-[Está um bocado mal explicado]
-
 \subsection{Scatter}
 
-The Scatter pattern takes a collection and a sequence of indices in the previous collection and puts the element of the position i at index[i]. There is a problem with this pattern that is if the index collection has repeated elements then data races occur. In our implementation, we left that verification to the user of the pattern because it would add too much weight to the operation and we think it should be a concern of the program that uses the function and not the function itself (pre-condition). We implemented this pattern resorting to map, where the worker copies the value in the position i of the input array to position index[i] in the output array.
+The Scatter pattern is the inverse of gather. It also takes an input collection (input) and a sequence of indices (filter) in the previous collection and puts
+ the element input[i] at index[i] in the output collection. There is a problem with this pattern that is if the index collection
+ has repeated elements then data races occur.
+  In our implementation, we left that verification to the user of the pattern because it would add too much weight
+   to the operation and we think it should be a concern of the program that uses the function and not the function itself (pre-condition).
+  We implemented this pattern resorting to map, where the worker copies the value in the position i of the input array to position index[i] in the output array.
 
 [Está um bocado mal explicado]
 
