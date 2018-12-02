@@ -511,6 +511,8 @@ When it reaches the leaves, the value to insert in the output collection corresp
 One important aspect that we want to mention is that with this algorithm the total work to be done is higher,
 but the value of span is smaller the total time required to finish the parallel prefix-sum is lower than the serial prefix-sum.
 
+This implementation has work O(n) but its span is only O (log n).
+
 \subsection{Pack}
 
 The Pack pattern consists on removing elements from a collection, keeping the remaining elements at contiguous positions, i.e., without unused space between them. The elements to remove (or to keep) are identified through a binary mask or a filter function function. In this pattern, the order of the elements is the same as their relative position in the input.
@@ -528,7 +530,11 @@ Split can obviously be implemented by running pack twice and then merging the re
 
 \subsection{Gather}
 
-The Gather pattern takes a collection and a sequence of indices in the previous collection and produces a collection composed by the elements of the input collection that correspond to the index on that position. Since only multiple reads can happen on the same element simultaneously, then each element of the index sequence can be processed in parallel. We implemented this pattern resorting to the Map pattern, where the worker function corresponds to reading the element at the given index from the input collection and writing it in the corresponding slot in the sequence.
+The Gather pattern takes a collection (input) and a sequence of indices (filter)  then it produces a collection (output)
+composed by the elements of the input collection in a way that the output[i] = input[ filter[ i ] ]. 
+Since only multiple reads can happen on the same element simultaneously, then each element of the index sequence can be processed in parallel.
+We implemented this pattern resorting to the Map pattern, where the worker function corresponds to reading the element at the given index from the input collection and writing it in the corresponding slot in the sequence.
+
 
 [Está um bocado mal explicado]
 
