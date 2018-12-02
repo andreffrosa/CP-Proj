@@ -481,9 +481,9 @@ Due to resorting to Scan and the fact that Map has work of O(n) and span of O(1)
 
 \subsection{Split}
 
-The Split\footnote[1]{Optional Extra Pattern} pattern is a variant of pack which does not discard elements and instead packs them after the last element of the elements whose mask value was true, i.e., splits the true elements to one side of the collection and the falses to the other.
+The Split\footnote[1]{Optional Extra Pattern} pattern is a variant of Pack which does not discard elements and instead packs them after the last element of the elements whose mask value was true, i.e., splits the true elements to one side of the collection and the false to the other.
 In this pattern, similarly to pack, the the order of the elements, within each output segment, is the same as their relative position in the input, in other words, it's a "stable" reordering, being that output size is always exactly the same size as the input's.
-Split can obviously be implemented by running pack twice and then merging the results. However, because this wouldn't be the most efficient implementation, we developed a more direct algorithm that improves latency. First, it computes the inverse of the mask, turning the falses into trues and vice-versa. Then, parallel executes two scans, one on the original mask and another on the inverted mask, similarly to pack, producing positiveBitsum and negativeBitsum collections respectively. Afterwards, waits for the termination of the scans and then applies a single map across the input collection, with a worker that, for each element, if it's true on the original mask, insert it in the output collection, at the position given by positiveBitsum, else insert it in the output collection, at the position given by negativeBitsum plus an offset that corresponds to the amount of elements that are true in the mask and this value is given by the value on the last element of the positiveBitsum.
+Split can obviously be implemented by running pack twice and then merging the results. However, because this wouldn't be the most efficient implementation, we developed a more direct algorithm that improves latency. First, it computes the inverse of the mask, turning the false into trues and vice-versa. Then, parallel executes two scans, one on the original mask and another on the inverted mask, similarly to pack, producing positiveBitsum and negativeBitsum collections respectively. Afterwards, waits for the termination of the scans and then applies a single map across the input collection, with a worker that, for each element, if it's true on the original mask, insert it in the output collection, at the position given by positiveBitsum, else insert it in the output collection, at the position given by negativeBitsum plus an offset that corresponds to the amount of elements that are true in the mask and this value is given by the value on the last element of the positiveBitsum.
 
 \subsection{Gather}
 
@@ -498,12 +498,11 @@ The Scatter pattern takes a collection and a sequence of indices in the previous
 [Está um bocado mal explicado]
 
 \subsection{Pipeline}
-The Pipeline pattern represents the sequential application of multiple operators (or stages) at the same element. Due to having multiple operators, they can be applied in parallel to different elements. However, having only one element at each stage can be too slow and thus, we implemented an alternative parallel version of pipeline - pipeline farm, that have multiple elements being processed at each stage in parallel and thus increase the throughput of the algorithm. This alternative version results from the combination of the Pipeline and Farm parallel patterns.
-
-%However, for the same reasons as reduce, the weight of each operator might be too small compared to the parallel overhead that it's not worth to use the parallel version. Thus, we also developed an alternative version for pipeline - pipeline farm, that consists in group elements in batches, and process it seq [não sei que mais dizer]
+The Pipeline pattern represents the sequential application of multiple operators (or stages) at the same element, being very similar to an assembly line. Due to having multiple operators, they can be applied in parallel to different elements.
+However, having only one element at each stage can be a bottle neck to the performance and thus, we decided to implement an alternative parallel version of pipeline - pipeline farm, that results from the combination of the Pipeline and Farm parallel patterns. Therefore, there are multiple elements being processed, in parallel, at each stage of the pipeline, consequently increasing the throughput of the algorithm.
 
 \subsection{Farm}
-The Farm pattern is very similar to Map with the constraint that the maximum amount of parallel operations is limited to the number of farms (parameter of the pattern). Thus, each job can be distributed evenly through all the farms and then processed sequentially in the respective farm.
+The Farm pattern is very similar to Map with the constraint that the maximum amount of parallel operations is limited to the number of farms (parameter of the pattern). Consequently, we distributed each job evenly through all the farms, that process sequentially their attributed input elements. 
 
 \section{Implementation} \label{Implementation}
 
