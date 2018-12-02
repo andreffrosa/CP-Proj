@@ -403,12 +403,8 @@ rfc.silva@campus.fct.unl.pt}}
 % in the abstract
 %\IEEEtitleabstractindextext{
 \begin{abstract}
-In recent years, the parallel computation paradigm has been emerging, as a consequence to: the huge growth on the amount of data that needs to be processed and analyzed, and to the switching of processors' architecture evolution process from becoming smaller and having faster clock speeds, to integrate parallel functionalities, such as multiple cores, hardware threads and vector operations. Therefore, it is imperative to build algorithms that explore these functionalities
-%and, at the same time, allow
-to increase the efficiency on processing such huge amounts of data.
-However, building algorithms on top of these functionalities can sometimes be a difficult and complex task, due to them being low level primitives and sometimes platform dependent. Thus, parallel functions and libraries can provide an easy and generic way to better utilize these resources, when available. Therefore, we developed a
-%parallel patterns
-library, that implements some of the most well known parallel patterns, and that can be easily integrated in any already existing sequential program, to improve its efficiency.
+In recent years, the parallel computation paradigm has been emerging, as a consequence to: the huge growth on the amount of data that needs to be processed and analyzed, and to the switching of processors' architecture evolution process from becoming smaller and having faster clock speeds, to integrate parallel functionalities, such as multiple cores, hardware threads and vector operations. Therefore, it is imperative to build algorithms that explore these functionalities to increase the efficiency on processing such huge amounts of data.
+However, building algorithms on top of these functionalities can sometimes be a difficult and complex task, due to them being low-level primitives and sometimes platform dependent. Thus, parallel functions and libraries can provide an easy and generic way to better utilize these resources, when available. Therefore, we developed a library, that implements some of the most well known parallel patterns, and that can be easily integrated with any already existing sequential program, to improve its efficiency.
 We developed each algorithm to try to achieve the maximum possible parallel slack and ...
 
 In order to be able to use it in a vast amount of use cases, these implementations are independent both from the data types they are manipulating and the parallel functionalities provided by each specific hardware platform.
@@ -417,7 +413,7 @@ What was our approach?
 What were the results?
 What did you learn?
 
-Finally, we conducted a preliminary experimental evaluation on the performance of the different implemented alternatives, comparing them with their corresponding sequential version, that showed ... .
+Finally, we conducted a preliminary experimental evaluation on the performance of the different implemented alternatives, comparing them with their corresponding sequential version, that showed ...
 
 %/par In the following document we will describe the reasoning behind the development
 %of our project, we also present results and analysis of the tests we ran.
@@ -444,19 +440,18 @@ Nowadays, the parallel paradigm is a matter of great importance, and the demand 
 
 In the one hand, the amount of data produced every day grows exponentially [meter uma citação], requiring more computational power to process it at the same speeds.
 
-On the other hand, due to single-core processors are reaching the physical limits of improvement through shrinking its components and increasing its clock speed, a revolution happened in the processor's architecture design. Processors evolution switched to have parallel functionalities, such as multiple cores and hardware threads as well as vector operations, that allow the simultaneously execution of processes and parallel manipulation of multiple data \cite{fasiku2014performance}.
+On the other hand, due to single-core processors are reaching the physical limits of improvement through shrinking its components and increasing its clock speed, a revolution happened in the processor's architecture design. Processors evolution switched to have parallel functionalities, such as multiple cores and hardware threads as well as vector operations, that allow the simultaneous execution of processes and parallel manipulation of multiple data.
+For these reasons, it's crucial to take advantage of these features to build algorithms that allow the processing of such huge amounts of data, having good levels of scalability and latency. However, build such algorithms can be a very difficult and complex task, not only because they have to make use of the previous low-level parallel primitives,
+but also because those primitives can be platform dependent and are highly heterogeneous, e.g., not all the processors provide vector operations and hardware threads and the number of cores may vary greatly, even within the same manufacturer, take Intel as an example - Intel's i7 lineup has chips with only 2 cores up to chips with a whopping 16 cores.
 
-For these reasons, it's crucial to take advantage of these features to build algorithms that allow the processing of such huge amounts of data, having good levels of scalability and latency. However, build such algorithms can be a very difficult and complex task, not only because they have to make use of the previous low level parallel primitives,
-but also because those primitives can be platform dependent and are highly heterogeneous, e.g., not all the processors provide vector operations and hardware threads and the amount of cores may vary greatly, even within the same manufacture, take Intel as an example - Intel's i7 lineup has chips with only 2 cores up to chips with a whopping 16 cores.
-
-Just like sequential algorithms, the parallel ones also have a set of specific recurring configuration of computations and data accesses. This configurations are called parallel patterns \cite{mccool2010structured} and they can help build parallel algorithms, serving as building blocs that can be glued together to produce an algorithm. Thus, a parallel algorithm can be seen as a composition of these parallel patterns.
+Just like sequential algorithms, the parallel ones also have a set of a specific recurring configuration of computations and data accesses. These configurations are called parallel patterns \cite{mccool2010structured} and they can help build parallel algorithms, serving as building blocks that can be glued together to produce an algorithm. Thus, a parallel algorithm can be seen as a composition of these parallel patterns.
 
 On that account, we designed and implemented a library that contains some of the most well known parallel patterns.
-%, that allow to give an abstraction to the user of the internal implementation of the pattern and just focus on combining them with other patterns to produce the intended algorithm.
+%, that allows to give an abstraction to the user of the internal implementation of the pattern and just focus on combining them with other patterns to produce the intended algorithm.
+
 This library provides an easy way to build parallel programs as well as to update already-built sequential programs to make use of the hardware parallel functionalities, allowing the application-level developer to integrate such patterns and give its application a boost of performance with little effort. We resorted to Intel's Cilk$^+$ \cite{robison2012cilk} to implement those patterns. In order to be able to use it in a vast amount of use cases, these implementations are independent both from the data types they are manipulating and the parallel functionalities provided by each specific hardware platform. We developed each algorithm to try to achieve the maximum possible parallel slack and ... [mudar um bocado isto]
 
 The remaining of this report is structured as follows: at Section~\ref{Architecture} we present the architecture of algorithm and at Section~\ref{Implementation} we discuss their relevant implementation details. The settings of the experiments along with their results are presented in Section~\ref{Experimental_Eval}. Lastly, we conclude this report with the conclusions, at Section~\ref{Conclusion}.
-
 %We did our best to keep the library independent from the system and the applications.
 %So, all of our implementations are independent from data types (all of out functions recieve data as void* ), and independent from the machine's system parallel low-level %intressencts (we make use of Intel's Cilk library to manage and deploy the number of threads needed to excute a given task).
 
@@ -478,10 +473,10 @@ The remaining of this report is structured as follows: at Section~\ref{Architect
 In this Section, we describe the architecture of each of the implement patterns in our library: Map, Reduce, Scan, Pack, Split, Gather, Scatter, Pipeline and Farm. [citações para os patterns]
 
 \subsection{Map}
-The Map pattern represents the independent application of a function to every element of a collection, and thus each operation can be executed in parallel. This function needs to be pure, e.g., not have side effects in order to be parallelizable. However, the computational weight of the aplication of the function might be too small in comparison to the overhead of parallelizing the tasks, leading to using the sequential version being a better option. Thus, to overcome this problem, the elements can be grouped in batches, that are process in parallel, and, within each batch, the elements are processed sequentially. The size of each batch is called \emph{Grain Size}. Our implemention of map works like that.
+The Map pattern represents the independent application of a function to every element of a collection, and thus each operation can be executed in parallel. This function needs to be pure, e.g., not have side effects in order to be parallelizable. However, the computational weight of the application of the function might be too small in comparison to the overhead of parallelizing the tasks, leading to using the sequential version being a better option. Thus, to overcome this problem, the elements can be grouped in batches, which are processed in parallel, and, within each batch, the elements are processed sequentially. The size of each batch is called \emph{Grain Size}. Our implemention of map works like that.
 
 \subsection{Reduce}
-The reduce pattern represents the application of a pairwise associative operation to all the elements of a collection, producing a single element. Since the operation is associate, multiple applications (to different elements) can be done in parallel. The execution of the parallel version of these pattern produces a binary tree, where the child nodes are the operands and the parent is the result of the operation.
+The reduce pattern represents the application of a pairwise associative operation to all the elements of a collection, producing a single element. Since the operation is associated, multiple applications (to different elements) can be done in parallel. The execution of the parallel version of these pattern produces a binary tree, where the child nodes are the operands and the parent is the result of the operation.
 
 In our library, we implemented two versions of reduce: (regular) reduce and tiled reduce. In regular reduce, the elements of the collection are paired and
 the worker (operator) is applied in parallel to each pair. This process is repeated to their results until there is only one element, the reduce result.
@@ -501,7 +496,7 @@ such as floating point arithmetic.
 The Scan pattern is very similar to the Reduce pattern with the difference that the output is a sequence of the results of all the intermediate operations and not just the last result. This sequence is ordered in the sense that the element in position i of the results from applying the operator to the element in position i-1 with the element of position i of the input collection.
 We tried to develop our own implementation of scan, however, we decided to use this [Citação], because it is better. [mudar este discurso]
 
-Briefly, this algorithm first builds a tree with bottom-up approach, similar to reduce, where the results of the intermediate operations are computed pairwise. Then, it traverses the tree top-down, passing to the left child the value inherited from its parent (the neutral element of the operation in the case of the root) and to the right child the result of applying the operator to the value inherited with the result of the intermediate computation of its left brother. In it reaches the leafs, the value to insert in the output collection corresponds to applying the operator to the inherited value and its own intermediate value.
+Briefly, this algorithm first builds a tree with a bottom-up approach, similar to reduce, where the results of the intermediate operations are computed pairwise. Then, it traverses the tree top-down, passing to the left child the value inherited from its parent (the neutral element of the operation in the case of the root) and to the right child the result of applying the operator to the value inherited with the result of the intermediate computation of its left brother. In it reaches the leaves, the value to insert in the output collection corresponds to applying the operator to the inherited value and its own intermediate value.
 
 [falar da complexidade disto e que tem mais work para ter menos span]
 
@@ -513,14 +508,13 @@ sparse collection and to handle variable-rate output from a
 map. From within map, each function activation is allowed to
 either keep or discard its outputs. The survivors are then
 packed together into a single collection.
-We consider make our own algorithm to solve pack but because it was not as efficient
+We consider making our own algorithm to solve pack but because it was not as efficient
 as the algorithm proposed by [those dudes] so we opted to implement that algorithm.
 
 \subsection{Split}
-The Split\footnote[1]{Optional Extra Pattern} pattern is a variant of pack which does not discard elements, but instead packs them to the top or bottom of the output collection.
+The Split\footnote[1]{Optional Extra Pattern} pattern is a variant of pack which does not discard elements but instead packs them to the top or bottom of the output collection.
 In the split pattern, the order of the elements within each output segment is the same as their relative position in the input (in other words, it is a "stable" reordering), and the total output size is always exactly the same size as the input.
-Split can obviously be implemented by running pack twice and merging the results. But because this would't be the
-most efficient implementation we developed a more direct algorithm to improves latency and thus more time
+Split can obviously be implemented by running pack twice and merging the results. But because this wouldn't be the most efficient implementation we developed a more direct algorithm to improves latency and thus more time
 efficient.
 
 \subsection{Gather}
@@ -531,12 +525,12 @@ The Gather pattern takes a collection and a sequence of indices in the previous 
 
 \subsection{Scatter}
 
-The Scatter pattern takes a collection and a sequence of indices in the previous collection and puts the element of the position i at index[i]. There is a problem with this pattern that is if the index collection has repeated elements then dataraces occur. In our implementation, we leaved that verification to the user of the pattern because it would add too much weight to the operation and we think it should be a concern of the program that uses the function and not the function itself (pre-condition). We implemented this pattern resorting to map, where the worker copies the value in the position i of the input array to position index[i] in the output array.
+The Scatter pattern takes a collection and a sequence of indices in the previous collection and puts the element of the position i at index[i]. There is a problem with this pattern that is if the index collection has repeated elements then data races occur. In our implementation, we left that verification to the user of the pattern because it would add too much weight to the operation and we think it should be a concern of the program that uses the function and not the function itself (pre-condition). We implemented this pattern resorting to map, where the worker copies the value in the position i of the input array to position index[i] in the output array.
 
 [Está um bocado mal explicado]
 
 \subsection{Pipeline}
-The Pipeline pattern represents the sequential application of multiple operators (or stages) at the same element. Due to having multiple operators, they can be applied in parallel at different elements. However, having only one element at each stage can be too slow and thus, we implemented an alternative parallel version of pipeline - pipeline farm, that have multiple elements being processed at each stage in parallel and thus increase the throughtput of the algorithm. This alternative version results from the combination of the Pipeline and Farm parallel patterns.
+The Pipeline pattern represents the sequential application of multiple operators (or stages) at the same element. Due to having multiple operators, they can be applied in parallel to different elements. However, having only one element at each stage can be too slow and thus, we implemented an alternative parallel version of pipeline - pipeline farm, that have multiple elements being processed at each stage in parallel and thus increase the throughput of the algorithm. This alternative version results from the combination of the Pipeline and Farm parallel patterns.
 
 %However, for the same reasons as reduce, the weight of each operator might be too small compared to the parallel overhead that it's not worth to use the parallel version. Thus, we also developed an alternative version for pipeline - pipeline farm, that consists in group elements in batches, and process it seq [não sei que mais dizer]
 
@@ -547,9 +541,9 @@ The Farm pattern is very similar to Map with the constraint that the maximum amo
 
 In this Section, we present some implementation details of our algorithms, that we found relevant.
 
-In the Map pattern implementation we would like to point out that we delegated the splitting of the source array into batches to the Cilk$^+$ runtime.
-%, for that it takes in consideration the size, and number of the elements to process.
-We tried to make the batching separation ourselfs, however, because we were getting poorer outcomes, and because we couldn't make assumptions on data types we were manipulating, and thus not know its size, we decided make use of Cilk$^+$'s automatic splitting.
+In the Map pattern implementation, we would like to point out that we delegated the splitting of the source array into batches to the Cilk$^+$ runtime.
+%, for that it takes into consideration the size, and the number of the elements to process.
+We tried to make the batching separation ourselves, however, because we were getting poorer outcomes, and because we couldn't make assumptions on data types we were manipulating, and thus not know its size, we decided make use of Cilk$^+$'s automatic splitting.
 
 %No map deixámos a separação em batches para o runtime do Cilk, que faz a separação automaticamente. Tentamos alterar os valores default mas obtivemos piores resultados e, visto que não podemos assumir com que tipos de dados estamos a lidar, achamos melhor deixar esta separação para o Cilk.
 
