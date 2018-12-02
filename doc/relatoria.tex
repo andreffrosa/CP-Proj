@@ -489,10 +489,11 @@ Split can obviously be implemented by running pack twice and then merging the re
 
 \subsection{Gather}
 
-The Gather pattern takes a collection (input) and a sequence of indices (filter)  then it produces a collection (output)
-composed by the elements of the input collection in a way that the output[i] = input[ filter[ i ] ].
-Since only multiple reads can happen on the same element simultaneously, then each element of the index sequence can be processed in parallel.
-We implemented this pattern resorting to the Map pattern, where the worker function corresponds to reading the element at the given index from the input collection and writing it in the corresponding slot in the sequence.
+The Gather pattern takes a input collection and a sequence of indexes, producing a output collection,
+that for each element in the index sequence, it inserts at that position, the value of the input collection that is at that index value. Thus, the size of the output collection is exactly the same as the size of the index sequence.
+
+Since only multiple reads can happen on the same element simultaneously (no data races), each element of the index sequence can be processed in parallel.
+Therefore, we implemented this pattern resorting to the Map pattern, where the worker function reads the element at the given index from the input collection and writs it in the corresponding position on the output sequence.
 
 \subsection{Scatter}
 
