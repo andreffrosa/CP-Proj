@@ -471,16 +471,21 @@ Thus, we decided to implement the alternative version, tiled reduce, which group
 
 \subsection{Scan}
 
-The Scan pattern is very similar to the Reduce pattern with the difference that the output the sequence of results of all the intermediate operations and not just the last result. The order of the sequence must be the same as the order of the sequential version.
+The Scan pattern, also known as Prefix-Sum, is very similar to the Reduce pattern
+ with the difference that it returns a sequence with the results of all the intermediate operations and not just the result of the last operation.
+The order of the sequence must be the same as the order of the sequential version.
+We decided to implement this version of Scan [citar].
+The complete algorithm is done in two stages.
+The first phase builds a tree with a bottom-up approach, similar to reduce, where the results of the intermediate operations are computed pairwise.
+The tree build must have the following properties: the root has sum of the range [x,y], if a node has sum of [lo, hi] and hi>lo then the left child has sum of [lo, middle], the right child has sum of [middle, hi] and
+a leaf has the value input[i].
+In the second phase, the tree built in the first phase is traversed in a top-down faction starting from the root (which receives a neutral element has its fromLeft)  and
+each node receives a fromLeft value from its ancestor, passes it to the left child and passes to the right child the result of applying the operator to the value inherited with the result of the intermediate computation of its left brother.
+When it reaches the leaves, the value to insert in the output collection corresponds to applying the operator to the inherited value and its own intermediate value.
 
-%We tried to develop our own implementation of scan, however, we decided to use this [Citação], because it is better. [mudar este discurso]
-We decide to implement this version of Scan [citar].
-
-Briefly, this algorithm first builds a tree with a bottom-up approach, similar to reduce, where the results of the intermediate operations are computed pairwise. Then, it traverses the tree top-down, passing to the left child the value inherited from its parent (the neutral element of the operation in the case of the root) and to the right child the result of applying the operator to the value inherited with the result of the intermediate computation of its left brother. In it reaches the leaves, the value to insert in the output collection corresponds to applying the operator to the inherited value and its own intermediate value.
-
-[falar da complexidade disto e que tem mais work para ter menos span]
-
-[Está um bocado mal explicado]
+%[falar da complexidade disto e que tem mais work para ter menos span]
+One important aspect that we want to mention is that with this algorithm the total work to be done is higher,
+but the value of span is smaller the total time required to finish the parallel prefix-sum is lower than the serial prefix-sum.
 
 \subsection{Pack}
 
