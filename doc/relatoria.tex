@@ -403,7 +403,7 @@ rfc.silva@campus.fct.unl.pt}}
 % in the abstract
 %\IEEEtitleabstractindextext{
 \begin{abstract}
-Parallel computing is a type of computation in which several tasks are executed simultaneously. In recent years, the parallel computation paradigm has grown in relevance as a consequence of two modern trends: the explosive increase in the amount of data available to process and analyze; and the shift in processor development from smaller, faster single-core processors, to processors with multiple cores, hardware threads and vector operations support. In order to fully utilize the potential of parallel hardware and more efficiently process large amounts of data, it is imperative that algorithms are designed with parallelism in mind.
+Parallel computing is a type of computation in which several tasks are executed simultaneously. In recent years, the parallel computation paradigm has grown in relevance as a consequence of two modern trends: the explosive increase in the amount of data available to process and analyze; and the shift in processor's development from smaller and clockwise faster single-core processors, to processors with multiple cores, hardware threads and vector operations support. In order to fully utilize the potential of parallel hardware and more efficiently process large amounts of data, it is imperative that algorithms are designed with parallelism in mind.
 The conception of parallel algorithms is made difficult by the very complex nature of parallel computation and by the fact that parallel hardware functionalites exist as low level primitives and are sometimes platform dependent. Parallel functions and libraries provide an easy and generic way to better utilize parallel hardware resources, when available. In this context, we developed a
 library that implements some of the most well known parallel patterns, and  can be easily integrated into any already existing sequential program to improve its efficiency.
 
@@ -436,37 +436,23 @@ Parallel Algorithms, Cilk$^+$
 
 \section{Introduction}
 
-Nowadays, the parallel paradigm is a matter of great importance, and the demand for more scalable and efficient data processing algorithms has increased.
+Parallel computing is a type of computation in which several independent tasks are executed simultaneously. In recent years, the parallel computation paradigm has grown in relevance as a consequence of two modern trends: the amount of data to process and the architectural evolution of processors.
+In the one hand, the explosive increase in the amount of data produced every day \cite{mcafee2012big}, lead to a demand of more scalabel and efficient data processing algorithms. %requiring more computational power to process and analyze it at useful rates.
+On the other hand, due to the fact that single-core processors are reaching the physical limits of improvement through increasing its clock frequency and shrinking of its components, to decrease the communication time between them, a revolution happened in the processor's architecture design. Consequently, processors' architecture evolution switched to insert parallel functionalities, such as having multiple cores and hardware threads as well as supporting vector operations, that allow the simultaneous execution of processes and parallel manipulation of multiple data.
 
-In the one hand, the amount of data produced every day grows at impressive rates \cite{mcafee2012big}, requiring more computational power to process it at useful rates.
+For these reasons, it is imperative that algorithms are designed with parallelism in mind, in order to fully take advantage of the potential of the parallel hardware they are being executed on, to process large amounts of data more efficiently, and at the same time provide scalability, to be prepared to the evolution of both the hardware and the amount of data produced.
 
-On the other hand, due to single-core processors are reaching the physical limits of improvement through shrinking its components and increasing its clock speed, a revolution happened in the processor's architecture design. Processors evolution switched to have parallel functionalities, such as multiple cores and hardware threads as well as vector operations, that allow the simultaneous execution of processes and parallel manipulation of multiple data.
-For these reasons, it's crucial to take advantage of these features to build algorithms that allow the processing of such huge amounts of data, having good levels of scalability and latency. However, build such algorithms can be a very difficult and complex task, not only because they have to make use of the previous low-level parallel primitives,
-but also because those primitives can be platform dependent and are highly heterogeneous, i.e., not all the processors provide vector operations and hardware threads and the number of cores may vary greatly, even within the same manufacturer, take Intel as an example - Intel's i7 lineup has chips with only 2 cores up to chips with a whopping 16 cores.
+However, the conception of parallel algorithms can be a very difficult and complex task due to the very complex nature of parallel computations, and by the fact that parallel hardware functionalities exist as low level primitives, being sometimes platform dependent and highly heterogeneous, i.e., not all the processors provide vector operations and hardware threads, and the number of cores may vary greatly, even within the same manufacturer: take Intel as an example - Intel's i7 lineup has chips with only 2 cores up to chips with a whopping 16 cores. Parallel functions and libraries provide an easy and generic way to better utilize parallel hardware resources, when available.
 
-Just like sequential algorithms, the parallel ones also have a set of a specific recurring configuration of computations and data accesses. These configurations are called parallel patterns \cite{mccool2010structured} and they can help build parallel algorithms, serving as building blocks that can be glued together to produce an algorithm. Thus, a parallel algorithm can be seen as a composition of these parallel patterns.
+%Through the abstraction provided by those libraries, it is possible to write hardware-independent algorithms.
+Simultaneously, just like sequential algorithms, the parallel ones also have a set of a specific recurring configuration of computations and data accesses. These configurations are called parallel patterns \cite{mccool2010structured} and they can help conceive parallel algorithms, serving as building blocks that can be glued together to produce an algorithm.% Thus, a parallel algorithm can be seen as a composition of these parallel patterns.
 
-On that account, we designed and implemented a library that contains some of the most well known parallel patterns.
-%, that allows to give an abstraction to the user of the internal implementation of the pattern and just focus on combining them with other patterns to produce the intended algorithm.
+On that account, we designed and implemented a library that contains some of the most well known parallel patterns, providing at the same time abstraction from the available hardware resources. To be able to use it in a vast amount of use cases, these implementations were also designed to be independent from the data types they are manipulating.
+Thus, this library provides an easy way to construct parallel programs as well as integrate it with little effort on already-built sequential programs, making use of the available hardware parallel functionalities and consequently improve its efficiency.
+To implement those patterns, we resorted to Intel's Cilk$^+$ \cite{robison2012cilk}, a C/C++ extension that support data and task parallelism.
+In the implementation of each parallel pattern, we sought to maximize the amount of parallel slack i.e. excess of potential parallelism versus actual amount of hardware parallelism. This approach guarantees an efficient use of hardware resources, since different machines will be able to execute the parallel patterns with varying amounts of parallelism. We prioritized the decrease in execution time of the implemented patterns, which for some of them meant increasing the amount of reserved memory to ensure better data locality and cache usage.
 
-This library provides an easy way to build parallel programs as well as to update already-built sequential programs to make use of the hardware parallel functionalities, allowing the application-level developer to integrate such patterns and give its application a boost of performance with little effort. We resorted to Intel's Cilk$^+$ \cite{robison2012cilk} to implement those patterns. In order to be able to use it in a vast amount of use cases, these implementations are independent both from the data types they are manipulating and the parallel functionalities provided by each specific hardware platform. We developed each algorithm to try to achieve the maximum possible parallel slack and ... [mudar um bocado isto]
-
-The remaining of this report is structured as follows: at Section~\ref{Architecture} we present the architecture of algorithm and at Section~\ref{Implementation} we discuss their relevant implementation details. The settings of the experiments along with their results are presented in Section~\ref{Experimental_Eval}. Lastly, we conclude this report with the conclusions, at Section~\ref{Conclusion}.
-%We did our best to keep the library independent from the system and the applications.
-%So, all of our implementations are independent from data types (all of out functions recieve data as void* ), and independent from the machine's system parallel low-level %intressencts (we make use of Intel's Cilk library to manage and deploy the number of threads needed to excute a given task).
-
-%\par As said before, the parallel paradigm is now a matter of great importance. Every day the amount of data to be
-%proce ssed grows, as well as the demand for efficient programs that produce results faster and efficiently.
-%Hardware performance has also evolved \textemdash processor architecture has switching from building bigger and
-%clockwise faster to have more cores and threads.
-%For these reasons, build highly concurrent programs is essential to achieve good levels of scability and letency.
-%\par However, code such programs can be very difficult, not only because they make use of low level primitives,
-%but also because those primitives can be platform dependent.
-%Therefore (outra palavra para nao ser igual?), we builded a library that implements well known parallel patterns
-%that allow the application-level developer to integrate such patterns and give its application a
-%boost of permormance with little to no difficulty.
-%We did our best to keep the library independent from the system and the applications.
-%So, all of our implementations are independent from data types and specific concurrent
+The remaining of this report is structured as follows: at Section~\ref{Architecture} we present the architecture of the algorithms and at Section~\ref{Implementation} we discuss their relevant implementation details. The settings of the experimental evaluation, along with a discussion about the results obtained, are presented in Section~\ref{Experimental_Eval}. Lastly, we conclude this report with the conclusions, at Section~\ref{Conclusion}.
 
 \section{Architecture} \label{Architecture}
 
