@@ -516,6 +516,8 @@ In the split pattern, the order of the elements within each output segment is th
 Split can obviously be implemented by running pack twice and merging the results. But because this would't be the
 most efficient implementation we developed a more direct algorithm to improves latency and thus more time
 efficient.
+Our implementation makes use of several parallel patterns: in a first phase we use the fork-join pattern to compute
+two scans, and then we use the map parallel pattern to sort the array as in the pack pattern.
 
 \subsection{Gather}
 
