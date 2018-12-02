@@ -479,7 +479,7 @@ This library provides an easy way to build parallel programs as well as to updat
 In this Section, we describe the architecture of each of the implement patterns: Map, Reduce, Scan, Pack, Split, Gather, Scatter, Pipeline and Farm. [citações para os patterns]
 
 \subsection{Map}
-The map pattern represents the independent application of a function to every element of a collection, and thus can be parallelized. [Dizer mais o que?]
+The map pattern represents the independent application of a function to every element of a collection, and thus each operation can be parallelized. [Dizer mais o que?]
 
 \subsection{Reduce}
 The reduce pattern represents the application of a pairwise associative operation to all the elements of a collection, producing a single element. Since the operation is associate, multiple applications (to different elements) can be done in parallel. The execution of the parallel version of these pattern produces a binary tree, where the child nodes are the operands and the parent is the result of the operation.
@@ -514,7 +514,7 @@ Função extra(secalhar dizer isto lá em cima)
 \subsection{Scatter}
 
 \subsection{Pipeline}
-
+The pipeline pattern represents the sequential application of multiple operators (or stages) at the same element. Due to having multiple operators, they can be applied in parallel at different elements. However, for the same reasons as reduce, the weight of each operator might be too small compared to the parallel overhead that it's not worth to use the parallel version. Thus, we also developed an alternative version for pipeline - pipeline farm, that consists in group elements in batches, and process it seq [não sei que mais dizer]
 
 \section{Implementation}
 
@@ -527,9 +527,6 @@ To evaluate the performance of our algorithms, we built a tester application tha
 
 
 \subsection{Experimental Results}
-
-
-
 
 \begin{figure}[h!]
   \centering
