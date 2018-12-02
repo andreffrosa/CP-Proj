@@ -508,7 +508,7 @@ Briefly, this algorithm first builds a tree with a bottom-up approach, similar t
 
 \subsection{Pack}
 
-The Pack pattern consists on removing elements from a collection, keeping the remaining elements at contiguous positions, i.e., without unused space between them. The elements to remove (or to keep) are identified through a binary mask or a filter function function.
+The Pack pattern consists on removing elements from a collection, keeping the remaining elements at contiguous positions, i.e., without unused space between them. The elements to remove (or to keep) are identified through a binary mask or a filter function function. In this pattern, the order of the elements is the same as their relative position in the input.
 
 This pattern is generally used to eliminate wasted space in a sparse collection and to handle variable-rate output from a map (or other patterns), where the worker is allowed to either keep or discard its outputs.
 We considered designing our own algorithm to implement Pack, however, the version proposed in the classes was more efficient, and thus we opted to implement that instead. That version resorts to Scan to compute the sum of the mask elements, originating the bitsum. That sequence, gives, for each true element on the mask, the corresponding input's element position in the output collection. Then, a map is applied to the bitsum with a worker that for each true element of the mask, inserts the corresponding element of the input collection into the output collection, in the position defined by the corresponding bitsum.
@@ -516,10 +516,10 @@ We considered designing our own algorithm to implement Pack, however, the versio
 This implementation have work O(n) and span O(log n). [melhorar isto]
 
 \subsection{Split}
-The Split\footnote[1]{Optional Extra Pattern} pattern is a variant of pack which does not discard elements but instead packs them to the top or bottom of the output collection.
-In the split pattern, the order of the elements within each output segment is the same as their relative position in the input (in other words, it is a "stable" reordering), and the total output size is always exactly the same size as the input.
-Split can obviously be implemented by running pack twice and merging the results. But because this wouldn't be the most efficient implementation we developed a more direct algorithm to improves latency and thus more time
-efficient.
+
+The Split\footnote[1]{Optional Extra Pattern} pattern is a variant of pack which does not discard elements and instead packs them after the last element of the elements whose mask value was true, i.e., splits the true elements to one side of the collection and the falses to the other.
+In this pattern, similarly to pack, the the order of the elements, within each output segment, is the same as their relative position in the input, in other words, it's a "stable" reordering, being that output size is always exactly the same size as the input's.
+Split can obviously be implemented by running pack twice and then merging the results. However, because this wouldn't be the most efficient implementation, we developed a more direct algorithm that improves latency. First, it computes the inverse of the mask, turning the falses into trues and vice-versa. Then, parallel executes two scans, one on the original mask and another on the inverted mask, similarly to pack, producing positiveBitsum and negativeBitsum collections respectively. Afterwards, waits for the termination of the scans and then applies a single map across the input collection, with a worker that, for each element, if it's true on the original mask, insert it in the output collection, at the position given by positiveBitsum, else insert it in the output collection, at the position given by negativeBitsum plus an offset that corresponds to the amount of elements that are true in the mask and this value is given by the value on the last element of the positiveBitsum.
 
 \subsection{Gather}
 
