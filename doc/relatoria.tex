@@ -446,7 +446,7 @@ The remaining of this report is structured as follows: at Section~\ref{Architect
 
 \section{Architecture} \label{Architecture}
 
-In this Section, we describe the architecture of each of the implement patterns in our library: Map, Reduce, Scan, Pack, Split, Gather, Scatter, Pipeline and Farm. [citações para os patterns]
+In this Section, we describe the architecture of each of the implement patterns in our library: Map, Reduce, Scan, Pack, Split, Gather, Scatter, Pipeline and Farm.
 
 \subsection{Map}
 The Map pattern consists on the independent application of the same function (or worker) to every element of a collection. This function needs to be pure, i.e., not have side effects in order to be parallelizable. As the applications of the function are independent from one another, they can be executed in parallel.
@@ -490,7 +490,7 @@ Split can obviously be implemented by running pack twice and then merging the re
 \subsection{Gather}
 
 The Gather pattern takes a collection (input) and a sequence of indices (filter)  then it produces a collection (output)
-composed by the elements of the input collection in a way that the output[i] = input[ filter[ i ] ]. 
+composed by the elements of the input collection in a way that the output[i] = input[ filter[ i ] ].
 Since only multiple reads can happen on the same element simultaneously, then each element of the index sequence can be processed in parallel.
 We implemented this pattern resorting to the Map pattern, where the worker function corresponds to reading the element at the given index from the input collection and writing it in the corresponding slot in the sequence.
 
@@ -508,7 +508,7 @@ The Pipeline pattern represents the sequential application of multiple operators
 However, having only one element at each stage can be a bottle neck to the performance and thus, we decided to implement an alternative parallel version of pipeline - pipeline farm, that results from the combination of the Pipeline and Farm parallel patterns. Therefore, there are multiple elements being processed, in parallel, at each stage of the pipeline, consequently increasing the throughput of the algorithm.
 
 \subsection{Farm}
-The Farm pattern is very similar to Map with the constraint that the maximum amount of parallel operations is limited to the number of farms (parameter of the pattern). Consequently, we distributed each job evenly through all the farms, that process sequentially their attributed input elements. 
+The Farm pattern is very similar to Map with the constraint that the maximum amount of parallel operations is limited to the number of farms (parameter of the pattern). Consequently, we distributed each job evenly through all the farms, that process sequentially their attributed input elements.
 
 \section{Implementation} \label{Implementation}
 
