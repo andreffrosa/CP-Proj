@@ -546,18 +546,16 @@ The Farm pattern is very similar to Map with the constraint that the maximum amo
 
 \section{Implementation} \label{Implementation}
 
-In this Section, we will present some implementation details that we found relevant.
+In this Section, we present some implementation details of our algorithms, that we found relevant.
 
-In the map pattern implementation we would like to point out that we left the the source array splitting
-to the cilk runtime, for that cilk takes in consideration the size, number of the elements to process.
-We tryed to make the batching separation ourselfs but, because we were getting pooer outcomes, and because
-we couldn't make assumptions on data types we just left this task to cilk.
+In the Map pattern implementation we would like to point out that we delegated the splitting of the source array into batches to the Cilk$^+$ runtime.
+%, for that it takes in consideration the size, and number of the elements to process.
+We tried to make the batching separation ourselfs, however, because we were getting poorer outcomes, and because we couldn't make assumptions on data types we were manipulating, and thus not know its size, we decided make use of Cilk$^+$'s automatic splitting.
 
 %No map deixámos a separação em batches para o runtime do Cilk, que faz a separação automaticamente. Tentamos alterar os valores default mas obtivemos piores resultados e, visto que não podemos assumir com que tipos de dados estamos a lidar, achamos melhor deixar esta separação para o Cilk.
 
 
-In the reduce pattern implementation, to avoid dataraces and keep the intermediates results contigous in memory,
-we make use of two arrays, one to read from and another to write to, these arrays switch roles at each iteration of reduce.
+In the Reduce pattern implementation, to avoid data-races when trying to keep the intermediates results contiguous in memory (for faster sequential processing), we decided to use two intermediate arrays, one to read and another to write, that switch roles at each iteration ( level on the execution tree ) of reduce. This allowed to not keep all the intermediate results in memory, because they are only needed to compute the next level results, and at the same time improve the processing of each level by keeping all the elements contiguous and thus, increase the processing of the sequential version algorithm on each batch (or pair of elements in the case of regular reduce).
 
 %Na nossa implementação do reduce, de forma a evitar dataraces e a manter os resultados intermédios contigous em memória, resolvemos utilizar dois arrays auxiliares, um para escrita e outro para leitura, que vão sendo alternados a cada iteração do reduce.
 
