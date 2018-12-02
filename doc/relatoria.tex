@@ -459,16 +459,6 @@ In our library, we decided to implemented two versions of reduce: (regular) redu
 However, the weight of operator may be too small compared to the parallelization overhead, that it does not pay to use the parallel version.
 Thus, we decided to implement the alternative version, tiled reduce, which groups several elements of the collection in a tile, instead of only two. This tiles are then processed in parallel, being that for each one, a sequential version of reduce is executed.
 
-[Secalhar explicar mais em detalhe a nossa implementação]
-
-%problem of semi
-%-
-%associative operations
-%such as floating point arithmetic.
-
-%Explicar que quisemos aumentar oa máximo parallel slack e por isso quando o array de ouptu é grande este é continuamente dividido na versaõ tiled até ter um tamanho minimo. Formando uma árvore n-ária em vez de binária.
-%Explicar a técnica dos dois arrays para fazer a árvore de execução mas sem a armazenar toda em memória e poupar espaço sem ter apontadores para os pais e filhos, etc.
-
 \subsection{Scan}
 
 The Scan pattern is very similar to the Reduce pattern,
