@@ -506,16 +506,11 @@ We consider make our own algorithm to solve pack but bucause it was not as effic
 as the algorithm proposed by [those dudes] so we opted to implement that algorithm.
 
 \subsection{Split}
-<<<<<<< HEAD
-\footnote[1]{Optional Extra Pattern}
-Função extra(secalhar dizer isto lá em cima)
-=======
- The split pattern is a variant of pack which does not discard elements, but instead packs them to the top or bottom of the output collection.
- In the split pattern, the order of the elements within each output segment is the same as their relative position in the input (in other words, it is a "stable" reordering), and the total output size is always exactly the same size as the input.
- Split can obviously be implemented by running pack twice and merging the results. But because this would't be the
- most efficient implementation we developed a more direct algorithm to improves latency and thus more time
- efficient.   
->>>>>>> 2f989e439024bd24d80530b4d69b94d740ca31f7
+The Split\footnote[1]{Optional Extra Pattern} pattern is a variant of pack which does not discard elements, but instead packs them to the top or bottom of the output collection.
+In the split pattern, the order of the elements within each output segment is the same as their relative position in the input (in other words, it is a "stable" reordering), and the total output size is always exactly the same size as the input.
+Split can obviously be implemented by running pack twice and merging the results. But because this would't be the
+most efficient implementation we developed a more direct algorithm to improves latency and thus more time
+efficient.
 
 \subsection{Gather}
 
