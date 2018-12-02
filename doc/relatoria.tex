@@ -489,9 +489,6 @@ the worker (operator) is applied in parallel to each pair. This process is repea
 However, the weight of the application of the operators may be so small compared to the parallel overhead, that it does not pay to use the parallel version.
 Thus, we decided to implement an alternative version for the reduce - tiled reduce, which groups several elements of the collection in a tile, instead of only two, and executes the sequential version for each in parallel.
 
-[isto secalhar vai para a parte da implementação]
-Na nossa implementação do reduce, de forma a evitar dataraces e a manter os resultados intermédios contigous em memória, resolvemos utilizar dois arrays auxiliares, um para escrita e outro para leitura, que vão sendo alternados a cada iteração do reduce.
-
 %Explicar que quisemos aumentar oa máximo parallel slack e por isso quando o array de ouptu é grande este é continuamente dividido na versaõ tiled até ter um tamanho minimo. Formando uma árvore n-ária em vez de binária.
 %Explicar a técnica dos dois arrays para fazer a árvore de execução mas sem a armazenar toda em memória e poupar espaço sem ter apontadores para os pais e filhos, etc.
 
@@ -509,6 +506,7 @@ This algorithm was proposed by [nomes do dreds]. We consider make our own algori
 
 
 \subsection{Split}
+\footnote[1]{Optional Extra Pattern}
 Função extra(secalhar dizer isto lá em cima)
 
 \subsection{Gather}
@@ -516,13 +514,22 @@ Função extra(secalhar dizer isto lá em cima)
 \subsection{Scatter}
 
 \subsection{Pipeline}
-The pipeline pattern represents the sequential application of multiple operators (or stages) at the same element. Due to having multiple operators, they can be applied in parallel at different elements.
+The pipeline pattern represents the sequential application of multiple operators (or stages) at the same element. Due to having multiple operators, they can be applied in parallel at different elements. However, having only one element at each stage can be too slow and thus, we implemented an alternative parallel version of pipeline - pipeline farm, that have multiple elements being processed at each stage in parallel and thus increase the throughtput of the algorithm. This alternative version results from the combination of the Pipeline and Farm parallel patterns.
 
 %However, for the same reasons as reduce, the weight of each operator might be too small compared to the parallel overhead that it's not worth to use the parallel version. Thus, we also developed an alternative version for pipeline - pipeline farm, that consists in group elements in batches, and process it seq [não sei que mais dizer]
+
+\subsection{Farm}
+The Farm pattern is very similar to Map with the constraint that the maximum amount of parallel operations is limited to the number of farms (parameter of the pattern). Thus, each job can be distributed evenly through all the farms and then processed sequentially in the respective farm.
 
 \section{Implementation} \label{Implementation}
 
 In this Section, we ...
+
+No map deixámos a separação em batches para o runtime do Cilk, que faz a separação automaticamente. Tentamos alterar os valores default mas obtivemos piores resultados e, visto que não podemos assumir com que tipos de dados estamos a lidar, achamos melhor deixar esta separação para o Cilk.
+
+
+Na nossa implementação do reduce, de forma a evitar dataraces e a manter os resultados intermédios contigous em memória, resolvemos utilizar dois arrays auxiliares, um para escrita e outro para leitura, que vão sendo alternados a cada iteração do reduce.
+
 
 \section{Experimental Evaluation} \label{Experimental_Eval}
 In this Section we present an experimental evaluation of the implemented parallel algorithms, comparing their performance against their sequential version.
