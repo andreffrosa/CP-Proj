@@ -471,21 +471,14 @@ Thus, we decided to implement the alternative version, tiled reduce, which group
 
 \subsection{Scan}
 
-The Scan pattern, also known as Prefix-Sum, is very similar to the Reduce pattern
- with the difference that it returns a sequence with the results of all the intermediate operations and not just the result of the last operation.
-The order of the sequence must be the same as the order of the sequential version.
-We decided to implement this version of Scan [citar].
-The complete algorithm is done in two stages.
-The first phase builds a tree with a bottom-up approach, similar to reduce, where the results of the intermediate operations are computed pairwise.
-The tree build must have the following properties: the root has sum of the range [x,y], if a node has sum of [lo, hi] and hi>lo then the left child has sum of [lo, middle], the right child has sum of [middle, hi] and
-a leaf has the value input[i].
-In the second phase, the tree built in the first phase is traversed in a top-down faction starting from the root (which receives a neutral element has its fromLeft)  and
-each node receives a fromLeft value from its ancestor, passes it to the left child and passes to the right child the result of applying the operator to the value inherited with the result of the intermediate computation of its left brother.
-When it reaches the leaves, the value to insert in the output collection corresponds to applying the operator to the inherited value and its own intermediate value.
+The Scan pattern is very similar to the Reduce pattern,
+with the difference that it returns a sequence, with the results of all the intermediate operations, and not just the result of the last operation.
+The order of the sequence must be the same as the order of the sequential version's result.
 
-%[falar da complexidade disto e que tem mais work para ter menos span]
-One important aspect that we want to mention is that with this algorithm the total work to be done is higher,
-but the value of span is smaller the total time required to finish the parallel prefix-sum is lower than the serial prefix-sum.
+We decided to implement this version of Scan \cite{ladner1980parallel}, that is composed by two phases.
+In the first, it builds a tree, in a bottom-up approach, similarly to reduce, where the nodes are the results of the intermediate operations are computed pairwise, with the exception of the leafs, that correspond to input elements. The root of these tree corresponds to the result of applying the operator to all the input's elements, i.e., it's the same as the reduce value.
+In the second phase, it traverses the tree, in a top-down approach, passing to the left child of each node, the value inherited from its parent (the neutral element of the operation in the case of the root) and to the right child the result of applying the operator to the value inherited with the result of the intermediate computation of its left brother. In it reaches the leaves, the value to insert in the output collection corresponds to applying the operator to the inherited value and its own intermediate value.
+One important aspect of this algorithm is that the total work to be done is higher, having complexity O(log n), however the the value of the span decreases, to O(log n).
 
 \subsection{Pack}
 
