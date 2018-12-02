@@ -477,7 +477,7 @@ The Pack pattern consists on removing elements from a collection, keeping the re
 This pattern is generally used to eliminate wasted space in a sparse collection and to handle variable-rate output from a map (or other patterns), where the worker is allowed to either keep or discard its outputs.
 We considered designing our own algorithm to implement Pack, however, the version proposed in the classes was more efficient, and thus we opted to implement that instead. That version resorts to Scan to compute the sum of the mask elements, originating the bitsum. That sequence, gives, for each true element on the mask, the corresponding input's element position in the output collection. Then, a map is applied to the bitsum with a worker that for each true element of the mask, inserts the corresponding element of the input collection into the output collection, in the position defined by the corresponding bitsum.
 
-This implementation have work O(n) and span O(log n). [melhorar isto]
+Due to resorting to Scan and the fact that Map has work of O(n) and span of O(1), this implementation also have work O(n) and span O(log n).
 
 \subsection{Split}
 
