@@ -499,7 +499,14 @@ such as floating point arithmetic.
 
 \subsection{Scan}
 
-The Scan pattern
+The Scan pattern is very similar to the Reduce pattern with the difference that the output is a sequence of the results of all the intermediate operations and not just the last result. This sequence is ordered in the sense that the element in position i of the results from applying the operator to the element in position i-1 with the element of position i of the input collection.
+We tried to develop our own implementation of scan, however, we decided to use this [Citação], because it is better. [mudar este discurso]
+
+Briefly, this algorithm first builds a tree with bottom-up approach, similar to reduce, where the results of the intermediate operations are computed pairwise. Then, it traverses the tree top-down, passing to the left child the value inherited from its parent (the neutral element of the operation in the case of the root) and to the right child the result of applying the operator to the value inherited with the result of the intermediate computation of its left brother. In it reaches the leafs, the value to insert in the output collection corresponds to applying the operator to the inherited value and its own intermediate value.
+
+[falar da complexidade disto e que tem mais work para ter menos span]
+
+[Está um bocado mal explicado]
 
 \subsection{Pack}
 The Pack pattern is used to eliminate wasted space in a
@@ -516,16 +523,18 @@ In the split pattern, the order of the elements within each output segment is th
 Split can obviously be implemented by running pack twice and merging the results. But because this would't be the
 most efficient implementation we developed a more direct algorithm to improves latency and thus more time
 efficient.
-Our implementation makes use of several parallel patterns: in a first phase we use the fork-join pattern to compute
-two scans, and then we use the map parallel pattern to sort the array as in the pack pattern.
 
 \subsection{Gather}
 
-The Gather pattern takes a collection and a sequence of indices in the previous collection and produces a collection composed by the elements of the input collection that corresponde to the index on that position. Since only multiple reads can happen on the same element simultaneously, then each element of the index sequence can be processed in parallel. We implemented this pattern resorting to the Map pattern, where the worker function corresponds to reading the element at the given index from the input collection and writing it in the corresponding slot in the sequence.
+The Gather pattern takes a collection and a sequence of indices in the previous collection and produces a collection composed by the elements of the input collection that correspond to the index on that position. Since only multiple reads can happen on the same element simultaneously, then each element of the index sequence can be processed in parallel. We implemented this pattern resorting to the Map pattern, where the worker function corresponds to reading the element at the given index from the input collection and writing it in the corresponding slot in the sequence.
 
 [Está um bocado mal explicado]
 
 \subsection{Scatter}
+
+The Scatter pattern takes a collection and a sequence of indices in the previous collection and puts the element of the position i at index[i]. There is a problem with this pattern that is if the index collection has repeated elements then dataraces occur. In our implementation, we leaved that verification to the user of the pattern because it would add too much weight to the operation and we think it should be a concern of the program that uses the function and not the function itself (pre-condition). We implemented this pattern resorting to map, where the worker copies the value in the position i of the input array to position index[i] in the output array.
+
+[Está um bocado mal explicado]
 
 \subsection{Pipeline}
 The Pipeline pattern represents the sequential application of multiple operators (or stages) at the same element. Due to having multiple operators, they can be applied in parallel at different elements. However, having only one element at each stage can be too slow and thus, we implemented an alternative parallel version of pipeline - pipeline farm, that have multiple elements being processed at each stage in parallel and thus increase the throughtput of the algorithm. This alternative version results from the combination of the Pipeline and Farm parallel patterns.
@@ -544,6 +553,7 @@ No map deixámos a separação em batches para o runtime do Cilk, que faz a sepa
 
 Na nossa implementação do reduce, de forma a evitar dataraces e a manter os resultados intermédios contigous em memória, resolvemos utilizar dois arrays auxiliares, um para escrita e outro para leitura, que vão sendo alternados a cada iteração do reduce.
 
+%Falar que o slpit não saõ 2 packs porque tinham de ser 1 depois do outro? ou isso é retardado?
 
 \section{Experimental Evaluation} \label{Experimental_Eval}
 In this Section we present an experimental evaluation of the implemented parallel algorithms, comparing their performance against their sequential version.
