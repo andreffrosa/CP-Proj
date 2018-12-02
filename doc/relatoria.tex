@@ -446,7 +446,7 @@ The remaining of this report is structured as follows: at Section~\ref{Architect
 
 \section{Architecture} \label{Architecture}
 
-In this Section, we describe the architecture of each of the implement patterns in our library: Map, Reduce, Scan, Pack, Split, Gather, Scatter, Pipeline and Farm.
+In this Section, we describe the architecture of each of the implement patterns in our library: Map, Reduce, Scan, Pack, Split, Gather, Scatter, Pipeline and Farm. [citações para os patterns]
 
 \subsection{Map}
 The Map pattern consists on the independent application of the same function (or worker) to every element of a collection. This function needs to be pure, i.e., not have side effects in order to be parallelizable. As the applications of the function are independent from one another, they can be executed in parallel.
@@ -458,6 +458,16 @@ The Reduce pattern consists on applying a pairwise associative operation (e.g. A
 In our library, we decided to implemented two versions of reduce: (regular) reduce and tiled reduce. In regular reduce, the elements of the collection are paired and the worker (operator) is applied in parallel to each pair. This process is repeated to their results until there is only one element, the reduce result.
 However, the weight of operator may be too small compared to the parallelization overhead, that it does not pay to use the parallel version.
 Thus, we decided to implement the alternative version, tiled reduce, which groups several elements of the collection in a tile, instead of only two. This tiles are then processed in parallel, being that for each one, a sequential version of reduce is executed.
+
+[Secalhar explicar mais em detalhe a nossa implementação]
+
+%problem of semi
+%-
+%associative operations
+%such as floating point arithmetic.
+
+%Explicar que quisemos aumentar oa máximo parallel slack e por isso quando o array de ouptu é grande este é continuamente dividido na versaõ tiled até ter um tamanho minimo. Formando uma árvore n-ária em vez de binária.
+%Explicar a técnica dos dois arrays para fazer a árvore de execução mas sem a armazenar toda em memória e poupar espaço sem ter apontadores para os pais e filhos, etc.
 
 \subsection{Scan}
 
@@ -479,35 +489,39 @@ The Pack pattern consists on removing elements from a collection, keeping the re
 This pattern is generally used to eliminate wasted space in a sparse collection and to handle variable-rate output from a map (or other patterns), where the worker is allowed to either keep or discard its outputs.
 We considered designing our own algorithm to implement Pack, however, the version proposed in the classes was more efficient, and thus we opted to implement that instead. That version resorts to Scan to compute the sum of the mask elements, originating the bitsum. That sequence, gives, for each true element on the mask, the corresponding input's element position in the output collection. Then, a map is applied to the bitsum with a worker that for each true element of the mask, inserts the corresponding element of the input collection into the output collection, in the position defined by the corresponding bitsum.
 
-Due to resorting to Scan and the fact that Map has work of O(n) and span of O(1), this implementation also have work O(n) and span O(log n).
+This implementation have work O(n) and span O(log n). [melhorar isto]
 
 \subsection{Split}
 
-The Split\footnote[1]{Optional Extra Pattern} pattern is a variant of Pack which does not discard elements and instead packs them after the last element of the elements whose mask value was true, i.e., splits the true elements to one side of the collection and the false to the other.
+The Split\footnote[1]{Optional Extra Pattern} pattern is a variant of pack which does not discard elements and instead packs them after the last element of the elements whose mask value was true, i.e., splits the true elements to one side of the collection and the falses to the other.
 In this pattern, similarly to pack, the the order of the elements, within each output segment, is the same as their relative position in the input, in other words, it's a "stable" reordering, being that output size is always exactly the same size as the input's.
-Split can obviously be implemented by running pack twice and then merging the results. However, because this wouldn't be the most efficient implementation, we developed a more direct algorithm that improves latency. First, it computes the inverse of the mask, turning the false into trues and vice-versa. Then, parallel executes two scans, one on the original mask and another on the inverted mask, similarly to pack, producing positiveBitsum and negativeBitsum collections respectively. Afterwards, waits for the termination of the scans and then applies a single map across the input collection, with a worker that, for each element, if it's true on the original mask, insert it in the output collection, at the position given by positiveBitsum, else insert it in the output collection, at the position given by negativeBitsum plus an offset that corresponds to the amount of elements that are true in the mask and this value is given by the value on the last element of the positiveBitsum.
+Split can obviously be implemented by running pack twice and then merging the results. However, because this wouldn't be the most efficient implementation, we developed a more direct algorithm that improves latency. First, it computes the inverse of the mask, turning the falses into trues and vice-versa. Then, parallel executes two scans, one on the original mask and another on the inverted mask, similarly to pack, producing positiveBitsum and negativeBitsum collections respectively. Afterwards, waits for the termination of the scans and then applies a single map across the input collection, with a worker that, for each element, if it's true on the original mask, insert it in the output collection, at the position given by positiveBitsum, else insert it in the output collection, at the position given by negativeBitsum plus an offset that corresponds to the amount of elements that are true in the mask and this value is given by the value on the last element of the positiveBitsum.
 
 \subsection{Gather}
 
-The Gather pattern takes a input collection and a sequence of indexes, producing a output collection,
-that for each element in the index sequence, it inserts at that position, the value of the input collection that is at that index value. Thus, the size of the output collection is exactly the same as the size of the index sequence.
-
-Since only multiple reads can happen on the same element simultaneously (no data races), each element of the index sequence can be processed in parallel.
-Therefore, we implemented this pattern resorting to the Map pattern, where the worker function reads the element at the given index from the input collection and writs it in the corresponding position on the output sequence.
+The Gather pattern takes a collection (input) and a sequence of indices (filter)  then it produces a collection (output)
+composed by the elements of the input collection in a way that the output[i] = input[ filter[ i ] ].
+Since only multiple reads can happen on the same element simultaneously, then each element of the index sequence can be processed in parallel.
+We implemented this pattern resorting to the Map pattern, where the worker function corresponds to reading the element at the given index from the input collection and writing it in the corresponding slot in the sequence.
 
 \subsection{Scatter}
 
-The Scatter pattern is the inverse of Gather. It also takes an input collection and a sequence of indexes. However, instead of reading the corresponding input elements referenced by the indexes, it writes the input value at that index, in the output sequence.
-Consequently, there is a problem with this pattern when there are repeated elements in the index sequence, leading to data races.
-In our implementation, we left that verification to the user of the pattern because it would add too much weight to the operation and we think it should be a concern of the program that uses the function and not the function itself (pre-condition).
-We also implemented this pattern resorting to Map, where the worker copies the value in the position i of the input array to position contained at the position i of the index array, to the output array.
+The Scatter pattern is the inverse of gather. It also takes an input collection (input) and a sequence of indices (filter) in the previous collection and puts
+ the element input[i] at index[i] in the output collection. There is a problem with this pattern that is if the index collection
+ has repeated elements then data races occur.
+  In our implementation, we left that verification to the user of the pattern because it would add too much weight
+   to the operation and we think it should be a concern of the program that uses the function and not the function itself (pre-condition).
+  We implemented this pattern resorting to map, where the worker copies the value in the position i of the input array to position index[i] in the output array.
+
+[Está um bocado mal explicado]
 
 \subsection{Pipeline}
-The Pipeline pattern represents the sequential application of multiple operators (or stages) at the same element, being very similar to an assembly line. Due to having multiple operators, they can be applied in parallel to different elements.
-However, having only one element at each stage can be a bottle neck to the performance and thus, we decided to implement an alternative parallel version of pipeline - pipeline farm, that results from the combination of the Pipeline and Farm parallel patterns. Therefore, there are multiple elements being processed, in parallel, at each stage of the pipeline, consequently increasing the throughput of the algorithm.
+The Pipeline pattern represents the sequential application of multiple operators (or stages) at the same element. Due to having multiple operators, they can be applied in parallel to different elements. However, having only one element at each stage can be too slow and thus, we implemented an alternative parallel version of pipeline - pipeline farm, that have multiple elements being processed at each stage in parallel and thus increase the throughput of the algorithm. This alternative version results from the combination of the Pipeline and Farm parallel patterns.
+
+%However, for the same reasons as reduce, the weight of each operator might be too small compared to the parallel overhead that it's not worth to use the parallel version. Thus, we also developed an alternative version for pipeline - pipeline farm, that consists in group elements in batches, and process it seq [não sei que mais dizer]
 
 \subsection{Farm}
-The Farm pattern is very similar to Map with the constraint that the maximum amount of parallel operations is limited to the number of farms (parameter of the pattern). Consequently, we distributed each job evenly through all the farms, that process sequentially their attributed input elements.
+The Farm pattern is very similar to Map with the constraint that the maximum amount of parallel operations is limited to the number of farms (parameter of the pattern). Thus, each job can be distributed evenly through all the farms and then processed sequentially in the respective farm.
 
 \section{Implementation} \label{Implementation}
 
@@ -533,12 +547,10 @@ In this Section we present an experimental evaluation of the implemented paralle
 
 %To evaluate the performance of our parallel algorithms, we built a tester application that, for each algorithm, runs each of its versions (parallel, sequential and alternative, when there is one) one after the other a parameterizable amount of times, in order to compute the average of their results and thus filter the noise introduced by the ... . For each algorithm we measured its latency for multiple amount of jobs and its latency for a fixed amount of jobs, with variable computation work. In order to count the elapsed time between the start and finish of the algorithm, we resort to a system call [citar] that returns the amount of the process CPU time, and thus not counting the time when the process is interrupted by the OS's process scheduler, giving more accurate results for the latency. The units utilized are microseconds (us). We run the experiments on node9, a computer with 16 cores and .... .
 
-To evaluate the performance of our parallel algorithms, we built a tester application that, for each algorithm, runs each of its versions: sequential, parallel and alternative, when there is one; and measure its latency, i.e., the elapsed time between the start and finish of the algorithm's version. For a given algorithm, it computes the latency for a sequence of job sizes, allowing us to measure the behavior of our solution regarding the input size. Each algorithm version for a given job amount, is run a parameterizable amount of times, in order to compute the average of their results and thus smooth the noise introduced by other processes and hardware details. The precision of the time measures are in the magnitude of milliseconds (ms), but the results are presented in seconds to improve readability.
-
-For each algorithm, we utilized computational heavy workers, that do multiple arithmetic computations, allowing to distinguish better the performance of the different versions.
-
+To evaluate the performance of our parallel algorithms, we built a tester application that, for each algorithm, runs each of its versions: sequential, parallel and alternative, when there is one; and measure its latency, i.e., the elapsed time between the start and finish of the algorithm's version. For a given algorithm, it computes the latency for a sequence of job sizes, allowing us to measure the behavior of our solution regarding the input size. Each algorithm version for a given job amount, is run a parameterizable amount of times, in order to compute the average of their results and thus smooth the noise introduced by other processes and hardware details. The precision of the time measures are in the magnitude of microseconds (us), but the results are presented in seconds to improve readability.
 Our experimental evaluation was executed in node9, a computer with 16 processors: Dual-Core AMD Opteron 8220 with 1000 MHz, Cache of 1024 Kb and
 TLB size of 1024 4K pages; and 27 GB of RAM. The results of these experiments are presented in the following section.
+
 
 \subsection{Experimental Results}
 
@@ -570,12 +582,10 @@ Análise comparatória da performance dizendo porque correu bem e porque correu 
 Análise geral, comparando a performance dos vaŕios uns cons os outros. Ex o map é o que aprenseta melhores resultados comparativamente à versão sequencial, bla bla
 Podiamos medir a difenreça entre a paralela e a sequencial dividdo e assim tinhamos um valor que ea comparável com os outro salgoritmos
 
-\subsubsection{Scatter}
-The parallel version of the Scatter pattern shows a noticeable worse computational performance when compared to its sequential counterpart as seen in Figure~\ref{latency}. This difference in performance seems counterintuitive, since parallel Scatter, being embarrassingly parallel (is trivially divided into parallel tasks), is implemented in the same way as the parallel Map pattern. Indeed, theoretically, the parallel Scatter should execute in less time than sequential Scatter. The cause for this result lies in the hardware, more specifically in the hardware memory caches. In a multi-processor system, each processor has its own individual cache (Level 1 cache), and they all share a common, slower cache (Last Level Cache). Everytime a processor reads a value from memory, a block of memory, representig the entire neighborhood of that value, is brought into the common cache, and the into the processor's individual cache. If one processor writes into a value stored in its individual cache, the entire block to which the value belongs, is marked as \emph{dirty}, meaning it has been altered. If any other processor contains the dirty block in its individual cache (even if it does not intend to access the dirty value specifically), that block is invalidated, and must be reloaded from memory. The act of reloading a block from memory is very slow when compared to a cpu's clock cycle, and induces slowdown on the execution of a program. The more processors there are, accessing and writing to the same memory blocks, the more noticeable the effects of cache invalidation across the execution of a program. We used the tool \emph{perf} to extract data about cache accesses, for both the parallel and sequential Scatter implementations. We observed a large increase in the number of accesses to the last level cache for the parallel implementation when compared to the sequential implementation. Indeed, an execution of parallel Scatter accessed, on average 40 times more to the last level cache than an execution of the sequential version for the same input. This is evidence of cache invalidation, which is the main factor behind the results observed.
-
 \section{Conclusion} \label{Conclusion}
 After making this project we take some lessons with us. We now really understand that building parallel programs can be a very difficult task, serial implementations of a given pattern sometimes are just impossible to parallelize due to various dependencies along the code, so it is necessary to 'think out of the box' and create algorithms completely different from the serial ones.
-
+This project was also quite different from the projects we are used to. We had to think like engineers: we had to debate and re-debate how we would implement our algorithms, we had to make some small 'sacrifices' in some areas (in our case memory) to achieve great results in other areas (time required), in other words, we had to reach a consensus on our priorities.
+At the end of the day, we understood that parallel programming is essential when the amount of data to process is substantial and even more when efficiency is a must! 
 \section*{Acknowledgments}
 
 The authors would like to thank...
