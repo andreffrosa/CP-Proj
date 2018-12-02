@@ -497,17 +497,25 @@ Thus, we decided to implement an alternative version for the reduce - tiled redu
 The scan pattern
 
 \subsection{Pack}
-Our parallel implementaion of pack [ref para pack] make use of the scan function to calculate a bitSum array of
-the filter values. We do this to calculate the positions of the values marked as toKeep
-(with filter value equal to 1) with span equal to log n [é isto?]. After this we excute a map over the filter array and for each position i if the value is positive (equal to 1). We copy the value at position i of the source array to the position bitSum[i]-1 of the destination array.
-This algorithm was proposed by [nomes do dreds]. We consider make our own algorithm to solve pack but bucause it was not as efficient we opted to implement this version of pack.
-
-[é isto??]
-
+The pack pattern is used to eliminate wasted space in a
+sparse collection and to handle variable-rate output from a
+map. From within map, each function activation is allowed to
+either keep or discard its outputs. The survivors are then
+packed together into a single collection.
+We consider make our own algorithm to solve pack but bucause it was not as efficient
+as the algorithm proposed by [those dudes] so we opted to implement that algorithm.
 
 \subsection{Split}
+<<<<<<< HEAD
 \footnote[1]{Optional Extra Pattern}
 Função extra(secalhar dizer isto lá em cima)
+=======
+ The split pattern is a variant of pack which does not discard elements, but instead packs them to the top or bottom of the output collection.
+ In the split pattern, the order of the elements within each output segment is the same as their relative position in the input (in other words, it is a "stable" reordering), and the total output size is always exactly the same size as the input.
+ Split can obviously be implemented by running pack twice and merging the results. But because this would't be the
+ most efficient implementation we developed a more direct algorithm to improves latency and thus more time
+ efficient.   
+>>>>>>> 2f989e439024bd24d80530b4d69b94d740ca31f7
 
 \subsection{Gather}
 
