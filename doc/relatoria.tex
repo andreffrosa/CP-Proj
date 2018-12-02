@@ -497,14 +497,10 @@ Therefore, we implemented this pattern resorting to the Map pattern, where the w
 
 \subsection{Scatter}
 
-The Scatter pattern is the inverse of gather. It also takes an input collection (input) and a sequence of indices (filter) in the previous collection and puts
- the element input[i] at index[i] in the output collection. There is a problem with this pattern that is if the index collection
- has repeated elements then data races occur.
-  In our implementation, we left that verification to the user of the pattern because it would add too much weight
-   to the operation and we think it should be a concern of the program that uses the function and not the function itself (pre-condition).
-  We implemented this pattern resorting to map, where the worker copies the value in the position i of the input array to position index[i] in the output array.
-
-[Está um bocado mal explicado]
+The Scatter pattern is the inverse of Gather. It also takes an input collection and a sequence of indexes. However, instead of reading the corresponding input elements referenced by the indexes, it writes the input value at that index, in the output sequence.
+Consequently, there is a problem with this pattern when there are repeated elements in the index sequence, leading to data races.
+In our implementation, we left that verification to the user of the pattern because it would add too much weight to the operation and we think it should be a concern of the program that uses the function and not the function itself (pre-condition).
+We also implemented this pattern resorting to Map, where the worker copies the value in the position i of the input array to position contained at the position i of the index array, to the output array.
 
 \subsection{Pipeline}
 The Pipeline pattern represents the sequential application of multiple operators (or stages) at the same element, being very similar to an assembly line. Due to having multiple operators, they can be applied in parallel to different elements.
