@@ -483,10 +483,10 @@ the worker (operator) is applied in parallel to each pair. This process is repea
 However, the weight of the application of the operators may be so small compared to the parallel overhead, that it does not pay to use the parallel version.
 Thus, we decided to implement an alternative version for the reduce - tiled reduce, which groups several elements of the collection in a tile, instead of only two, and executes the sequential version for each in parallel.
 
-problem of semi
--
-associative operations
-such as floating point arithmetic.
+%problem of semi
+%-
+%associative operations
+%such as floating point arithmetic.
 
 %Explicar que quisemos aumentar oa máximo parallel slack e por isso quando o array de ouptu é grande este é continuamente dividido na versaõ tiled até ter um tamanho minimo. Formando uma árvore n-ária em vez de binária.
 %Explicar a técnica dos dois arrays para fazer a árvore de execução mas sem a armazenar toda em memória e poupar espaço sem ter apontadores para os pais e filhos, etc.
@@ -503,13 +503,9 @@ Briefly, this algorithm first builds a tree with a bottom-up approach, similar t
 [Está um bocado mal explicado]
 
 \subsection{Pack}
-The Pack pattern is used to eliminate wasted space in a
-sparse collection and to handle variable-rate output from a
-map. From within map, each function activation is allowed to
-either keep or discard its outputs. The survivors are then
-packed together into a single collection.
-We consider making our own algorithm to solve pack but because it was not as efficient
-as the algorithm proposed by [those dudes] so we opted to implement that algorithm.
+The Pack pattern takes an collection and a binary mask, and returns the collection where only the elements of the input collection whose mask value was True (Without space between the elements).
+This pattern is generally used to eliminate wasted space in a sparse collection and to handle variable-rate output from a map (or other patterns), where the worker is allowed to either keep or discard its outputs.
+We consider design our own algorithm to implement Pack, however, the version proposed in the classes was more efficient, and thus we opted to implement that instead. That version resorts to Scan to compute a the sum of the mask (bitsum) elements giving for each True element of the mask the corresponding position in the output collection. Then, a map operation is applied that for all the elements of the input collection that have True in the corresponding mask position, insert at the position given by the bitsum (for the current element) in the output collection. This implementation have work O(n) and span O(log n).
 
 \subsection{Split}
 The Split\footnote[1]{Optional Extra Pattern} pattern is a variant of pack which does not discard elements but instead packs them to the top or bottom of the output collection.
