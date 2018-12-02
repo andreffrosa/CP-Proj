@@ -546,12 +546,20 @@ The Farm pattern is very similar to Map with the constraint that the maximum amo
 
 \section{Implementation} \label{Implementation}
 
-In this Section, we ...
+In this Section, we will present some implementation details that we found relevant.
 
-No map deixámos a separação em batches para o runtime do Cilk, que faz a separação automaticamente. Tentamos alterar os valores default mas obtivemos piores resultados e, visto que não podemos assumir com que tipos de dados estamos a lidar, achamos melhor deixar esta separação para o Cilk.
+In the map pattern implementation we would like to point out that we left the the source array splitting
+to the cilk runtime, for that cilk takes in consideration the size, number of the elements to process.
+We tryed to make the batching separation ourselfs but, because we were getting pooer outcomes, and because
+we couldn't make assumptions on data types we just left this task to cilk.
+
+%No map deixámos a separação em batches para o runtime do Cilk, que faz a separação automaticamente. Tentamos alterar os valores default mas obtivemos piores resultados e, visto que não podemos assumir com que tipos de dados estamos a lidar, achamos melhor deixar esta separação para o Cilk.
 
 
-Na nossa implementação do reduce, de forma a evitar dataraces e a manter os resultados intermédios contigous em memória, resolvemos utilizar dois arrays auxiliares, um para escrita e outro para leitura, que vão sendo alternados a cada iteração do reduce.
+In the reduce pattern implementation, to avoid dataraces and keep the intermediates results contigous in memory,
+we make use of two arrays, one to read from and another to write to, these arrays switch roles at each iteration of reduce.
+
+%Na nossa implementação do reduce, de forma a evitar dataraces e a manter os resultados intermédios contigous em memória, resolvemos utilizar dois arrays auxiliares, um para escrita e outro para leitura, que vão sendo alternados a cada iteração do reduce.
 
 %Falar que o slpit não saõ 2 packs porque tinham de ser 1 depois do outro? ou isso é retardado?
 
