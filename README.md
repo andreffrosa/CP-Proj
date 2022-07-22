@@ -1,6 +1,6 @@
 # Parallel Patterns
 
-Project description: [2018-10-31 Project](doc/2018-10-31 Project.pdf)
+Project description: [Project]("/doc/2018-10-31 Project.pdf")
 
 Developed in Cilk+
 
